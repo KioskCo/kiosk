@@ -696,7 +696,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (subsRes.status === "fulfilled") {
-          const sub = (subsRes.value as any).subscription ?? (subsRes.value as any);
+          const sub = (subsRes.value as any).data ?? (subsRes.value as any).subscription ?? (subsRes.value as any);
           if (sub?.plan && sub.status === "active") {
             next.subscription = {
               type: sub.plan as PlanType,
