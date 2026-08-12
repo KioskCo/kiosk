@@ -5,7 +5,7 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal" 
     },
     "preview": {
       "android": {
@@ -13,17 +13,15 @@
         "gradleCommand": ":app:assembleRelease"
       },
       "channel": "preview",
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_DOMAIN": "drastic-cruelty-arise.ngrok-free.dev"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "android": {
-        "buildType": "app-bundle"
-      },
-      "channel": "production"
-    }
+  "android": {
+    "buildType": "app-bundle"
+  },
+  "channel": "production",
+  "environment": "production"
+}
   },
   "submit": {
     "production": {}
