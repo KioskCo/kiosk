@@ -21,6 +21,11 @@ const isLocal = /:\d+$/.test(DOMAIN) || /^\d{1,3}(\.\d{1,3}){3}/.test(DOMAIN);
 const scheme = isLocal ? "http" : "https";
 const BASE_URL = DOMAIN ? `${scheme}://${DOMAIN}/api` : "/api";
 
+// DEBUG: log the resolved API base URL so builds can be verified against
+// the intended backend (EAS bakes EXPO_PUBLIC_DOMAIN at build time).
+console.log("[API] EXPO_PUBLIC_DOMAIN =", DOMAIN);
+console.log("[API] BASE_URL =", BASE_URL);
+
 const TOKEN_KEY = "@kiosk/auth_token";
 
 // ─── Token management ─────────────────────────────────────────────────────────
