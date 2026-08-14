@@ -7,20 +7,28 @@
       "developmentClient": true,
       "distribution": "internal" 
     },
-    "preview": {
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
-      },
-      "channel": "preview",
-      "distribution": "internal"
-    },
+"preview": {
+  "android": {
+    "buildType": "apk",
+    "gradleCommand": ":app:assembleRelease"
+  },
+  "channel": "preview",
+  "distribution": "internal",
+  "env": {
+    "EXPO_PUBLIC_DOMAIN": "kioskbknd-production.up.railway.app",
+    "EXPO_PUBLIC_SENTRY_DSN": "https://270ff938fcd528fe25fa77117b327943@o4511858919407616.ingest.de.sentry.io/4511858946998352"
+  }
+},
     "production": {
   "android": {
     "buildType": "app-bundle"
   },
   "channel": "production",
-  "environment": "production"
+  "environment": "production",
+  "env": {
+    "EXPO_PUBLIC_DOMAIN": "kioskbknd-production.up.railway.app",
+    "EXPO_PUBLIC_SENTRY_DSN": "https://270ff938fcd528fe25fa77117b327943@o4511858919407616.ingest.de.sentry.io/4511858946998352"
+  }
 }
   },
   "submit": {
