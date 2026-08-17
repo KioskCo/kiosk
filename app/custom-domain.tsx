@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { api } from "@/lib/api";
+import { shopUrl, shopBaseHostname } from "@/lib/shopConfig";
 
 export default function CustomDomainScreen() {
   const colors = useColors();
@@ -30,8 +31,8 @@ export default function CustomDomainScreen() {
   const [saved, setSaved] = useState(false);
 
   const username = profile?.username ?? "";
-  const kioskDomain = `keeosk.store`;
-  const cname = `@${username}.keeosk.store`;
+  const kioskDomain = shopBaseHostname();
+  const cname = `@${username}.${kioskDomain}`;
 
   const saveDomain = async () => {
     const d = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
@@ -75,9 +76,9 @@ export default function CustomDomainScreen() {
           <Text style={[styles.cardLabel, { color: colors.mutedForeground }]}>YOUR CURRENT STORE URL</Text>
           <View style={styles.urlRow}>
             <Text style={[styles.urlText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>
-              https://keeosk.store/@{username}
+              {shopUrl(username)}
             </Text>
-            <TouchableOpacity onPress={() => copy(`https://keeosk.store/@${username}`)}>
+            <TouchableOpacity onPress={() => copy(shopUrl(username))}>
               <Feather name="copy" size={14} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>

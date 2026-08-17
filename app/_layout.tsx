@@ -15,6 +15,7 @@ import * as Sentry from "@sentry/react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { StorefrontProvider } from "@/lib/storefront";
+import { loadShopBaseUrl } from "@/lib/shopConfig";
 
 Sentry.init({
   dsn:              process.env["EXPO_PUBLIC_SENTRY_DSN"],
@@ -106,6 +107,12 @@ function RootLayout() {
   useEffect(() => {
     const id = setTimeout(() => setFontTimeout(true), 6000);
     return () => clearTimeout(id);
+  }, []);
+
+  // Warm the storefront base URL from the server so store links reflect the
+  // current SHOP_BASE_URL (e.g. a Cloudflare Workers deployment) without an APK rebuild.
+  useEffect(() => {
+    loadShopBaseUrl();
   }, []);
 
   const [fontsLoaded, fontError] = useFonts({

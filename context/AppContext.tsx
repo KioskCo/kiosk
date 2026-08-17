@@ -15,6 +15,7 @@ try { MONEY_SRC  = require("../assets/sounds/moneyenternotification.mp3"); } cat
 import { Alert, AppState as RNAppState, Platform } from "react-native";
 
 import { authApi, productsApi, ordersApi, adsApi, subscriptionsApi, walletApi, whatsappApi, logisticsApi, referralsApi, tokenStore } from "@/lib/api";
+import { shopUrl, waMeLink } from "@/lib/shopConfig";
 
 async function registerPushToken(): Promise<void> {
   try {
@@ -449,7 +450,7 @@ const MOCK_TEMPLATES: StoreTemplate[] = [
     cardColor: "#F8FAFC",
     paymentGateways: ["flutterwave"],
     launched: true,
-    launchUrl: "https://kiosk.store/@myshop",
+    launchUrl: shopUrl("myshop"),
     whatsappLink: "https://wa.me/2348031234567?text=Hello%2C+I+found+your+site+on+Kiosk",
     sections: [
       { id: "s1", type: "hero", title: "Professional Services You Can Trust", subtitle: "Experience excellence with every interaction", buttonText: "Get Started", visible: true },
@@ -603,7 +604,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               email: user.email ?? "",
               avatarUri: cached?.avatarUri,
             };
-            setState((prev) => ({ ...prev, isAuthenticated: true, isAuthLoading: false, profile }));
+            setState((prev) => ({
+              ...prev,
+              isAuthenticated: true,
+              isAuthLoading: false,
+              profile,
+              whatsappNumber: (user as any).whatsappNumber ?? prev.whatsappNumber,
+              whatsappConnected: !!((user as any).whatsappNumber ?? prev.whatsappNumber),
+            }));
             AsyncStorage.setItem("kiosk_auth", JSON.stringify(profile));
             if (!cached) loadApiData();
           }
@@ -1396,9 +1404,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const template = prev.templates.find((t) => t.id === id);
       if (!template) return prev;
       const username = prev.profile?.username ?? "myshop";
-      const launchUrl = `https://kiosk.store/@${username}`;
-      const waMsg = encodeURIComponent(`Hello, I found your store on Kiosk! I'd love to shop with you.`);
-      const whatsappLink = `https://wa.me/?text=${waMsg}`;
+      const launchUrl = shopUrl(username);
+      const waMsg = `Hello, I found your store on Kiosk! I'd love to shop with you.`;
+      const whatsappLink = waMeLink(prev.whatsappNumber ?? "", waMsg);
       return {
         ...prev,
         templates: prev.templates.map((t) =>
@@ -1525,12 +1533,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const connectWhatsApp = useCallback((number: string) => {
-    setState((prev) => ({ ...prev, whatsappConnected: true, whatsappNumber: number }));
+    const wa = waMeLink(number, `Hello, I found your store on Kiosk! I'd love to shop with you.`);
+    setState((prev) => ({
+      ...prev,
+      whatsappConnected: true,
+      whatsappNumber: number,
+      templates: prev.templates.map((t) => (t.launched ? { ...t, whatsappLink: wa } : t)),
+    }));
     authApi.updateProfile({ whatsappNumber: number }).catch(() => {});
   }, []);
 
   const disconnectWhatsApp = useCallback(() => {
-    setState((prev) => ({ ...prev, whatsappConnected: false, whatsappNumber: "" }));
+    const wa = waMeLink("", `Hello, I found your store on Kiosk! I'd love to shop with you.`);
+    setState((prev) => ({
+      ...prev,
+      whatsappConnected: false,
+      whatsappNumber: "",
+      templates: prev.templates.map((t) => (t.launched ? { ...t, whatsappLink: wa } : t)),
+    }));
     authApi.updateProfile({ whatsappNumber: "" }).catch(() => {});
   }, []);
 

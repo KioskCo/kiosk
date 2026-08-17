@@ -26,6 +26,7 @@ import { AddProductModal } from "@/components/AddProductModal";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { flashSaleApi } from "@/lib/api";
+import { shopUrl } from "@/lib/shopConfig";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -49,7 +50,7 @@ export default function ProductDetailScreen() {
   const [saleDuration, setSaleDuration] = useState<"1h" | "3h" | "6h" | "24h">("3h");
 
   const launchedTemplate = templates.find((t) => t.launched);
-  const storeUrl = launchedTemplate?.launchUrl ?? `https://kiosk.store/@${profile?.username ?? ""}`;
+  const storeUrl = launchedTemplate?.launchUrl ?? shopUrl(profile?.username ?? "");
   const productUrl = product ? `${storeUrl}/product/${product.id}` : storeUrl;
   const defaultCaption = product
     ? `${product.name}\n\nPrice: ₦${product.price.toLocaleString("en-NG")}\n\nOrder here: ${productUrl}`

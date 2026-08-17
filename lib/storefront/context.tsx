@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { templatesApi } from "@/lib/api";
+import { shopUrl } from "@/lib/shopConfig";
 import React, {
   createContext,
   useCallback,
@@ -455,7 +456,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
       },
       launchTemplate: (id, username) => {
         const slug = (username ?? "shop").toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9_]/g, "");
-        const launchUrl = `https://kiosk.store/@${slug}`;
+        const launchUrl = shopUrl(slug);
         setState((s) => ({
           ...s,
           templates: s.templates.map((t) =>

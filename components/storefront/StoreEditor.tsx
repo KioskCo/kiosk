@@ -6,6 +6,7 @@ import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useRef, useState } from "react";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
+import { shopUrl, shopBaseHostname } from "@/lib/shopConfig";
 import {
   Alert,
   Animated,
@@ -197,7 +198,7 @@ export function StoreEditor({ templateId }: Props) {
   };
 
   const shareStore = async () => {
-    const url = template.launchUrl ?? `https://keeosk.store/@${profile?.username ?? "shop"}`;
+    const url = template.launchUrl ?? shopUrl(profile?.username ?? "shop");
     await Share.share({ message: `Visit my store: ${url}`, url });
   };
 
@@ -560,7 +561,7 @@ export function StoreEditor({ templateId }: Props) {
               { icon: "file-text", title: "Pages", body: "Add multiple pages (Home, Shop, About, Contactâ€¦) using the Pages tool. Each page has its own set of sections. Links you add to pages appear automatically in the navbar." },
               { icon: "droplet", title: "Theme", body: "Set your brand colors, fonts, button shapes, and card styles from the Theme tool. These apply across all sections." },
               { icon: "rotate-ccw", title: "Undo / redo", body: "The â† â†’ arrows at the top undo or redo any change. Nothing is permanent until you launch." },
-              { icon: "zap", title: "Launch your store", body: "When you're happy, tap Launch. Your store goes live at keeosk.store/@yourname and anyone can visit it." },
+              { icon: "zap", title: "Launch your store", body: `When you're happy, tap Launch. Your store goes live at ${shopBaseHostname()}/@yourname and anyone can visit it.` },
               { icon: "monitor", title: "Mobile & web", body: "Your store works on both mobile and web browsers automatically. No extra setup needed." },
             ].map((item) => (
               <View key={item.icon} style={[helpStyle.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
