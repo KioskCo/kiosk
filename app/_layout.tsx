@@ -31,7 +31,7 @@ SplashScreen.preventAutoHideAsync();
 // then auto-restarts the app so the new version is applied immediately.
 function UpdateBanner() {
   const insets = useSafeAreaInsets();
-  const { isDownloading, isUpdatePending, isRestarting, downloadProgress } = Updates.useUpdates();
+  const { isUpdateAvailable, isDownloading, isUpdatePending, isRestarting, downloadProgress } = Updates.useUpdates();
 
   useEffect(() => {
     if (!isUpdatePending) return;
@@ -43,15 +43,20 @@ function UpdateBanner() {
   }, [isUpdatePending]);
 
   const applying = isUpdatePending || isRestarting;
-  if (!isDownloading && !applying) return null;
+  if (!isDownloading && !isUpdateAvailable && !applying) return null;
 
   const pct = downloadProgress ? Math.min(100, Math.round(downloadProgress * 100)) : 0;
+  const label = applying
+    ? "Update ready — restarting…"
+    : isDownloading
+      ? `Updating… ${pct}%`
+      : "Update available — installing…";
 
   return (
-    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999, paddingTop: insets.top }}>
+    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999, elevation: 999, paddingTop: insets.top }}>
       <View style={{ backgroundColor: "#16A34A", paddingVertical: 10, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 13 }}>
-          {applying ? "Update ready — restarting…" : `Updating… ${pct}%`}
+          {label}
         </Text>
         <ActivityIndicator size="small" color="#FFFFFF" />
       </View>

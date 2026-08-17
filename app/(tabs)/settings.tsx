@@ -138,10 +138,11 @@ export default function SettingsScreen() {
       const res = await whatsappApi.getOAuthUrl();
       await WebBrowser.openBrowserAsync((res as any).authUrl ?? (res as any).data?.authUrl);
 
-      // Poll up to 5 times (every 2 s) — gives the OAuth callback time to complete
+      // Poll up to 20 times (every 2 s) — the vendor may take a while to
+      // finish Meta's Embedded Signup before the OAuth callback completes.
       let connected = false;
       let phoneNumber = "";
-      for (let attempt = 0; attempt < 5; attempt++) {
+      for (let attempt = 0; attempt < 20; attempt++) {
         if (attempt > 0) await new Promise((r) => setTimeout(r, 2000));
         try {
           const status = await whatsappApi.getStatus();
@@ -160,7 +161,7 @@ export default function SettingsScreen() {
         connectWhatsApp(phoneNumber);
         setActiveModal(null);
       } else {
-        setWaError("Connection not completed. Please finish the setup in the browser and try again.");
+        setWaError("Connection not confirmed yet. If you completed the Meta setup, close the app and reopen it — your number will show as connected.");
       }
     } catch {
       setWaError("Could not start the WhatsApp connection. Please check your internet connection and try again.");

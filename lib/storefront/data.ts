@@ -1416,6 +1416,8 @@ export type ReferralSettings = {
 
 export type Template = {
   id: string;
+  /** Backend template row id (set once the store is published). */
+  serverId?: string;
   name: string;
   thumbnail?: string;
   pages: Page[];

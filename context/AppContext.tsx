@@ -1408,7 +1408,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => {
       const template = prev.templates.find((t) => t.id === id);
       if (!template) return prev;
-      const username = prev.profile?.username ?? "myshop";
+      const username = prev.profile?.username ?? prev.profile?.name?.toLowerCase().replace(/\s+/g, "") ?? "";
       const launchUrl = shopUrl(username);
       const waMsg = `Hello, I found your store on Kiosk! I'd love to shop with you.`;
       const whatsappLink = waMeLink(prev.whatsappNumber ?? "", waMsg);

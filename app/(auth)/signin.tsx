@@ -55,7 +55,7 @@ export default function SignInScreen() {
       const user = (res as any).user;
       const profile = {
         name: user?.businessName ?? user?.name ?? "My Shop",
-        username: user?.businessName?.toLowerCase().replace(/\s+/g, "") ?? "myshop",
+        username: user?.username ?? user?.businessName?.toLowerCase().replace(/\s+/g, "") ?? (user?.email ?? "").split("@")[0]?.toLowerCase() ?? "",
         industry: "Retail" as const,
         email: user?.email ?? email.trim().toLowerCase(),
       };

@@ -213,7 +213,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(() => {
       lastSyncedJsonRef.current = json;
-      templatesApi.update(activeTpl.id, { settings: { templateJson: json } }).catch(() => {});
+      templatesApi.update(activeTpl.serverId ?? activeTpl.id, { settings: { templateJson: json } }).catch(() => {});
     }, 2000);
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
@@ -455,7 +455,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
         return t.id;
       },
       launchTemplate: (id, username) => {
-        const slug = (username ?? "shop").toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9_]/g, "");
+        const slug = (username ?? "").toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9_]/g, "");
         const launchUrl = shopUrl(slug);
         setState((s) => ({
           ...s,
@@ -465,20 +465,38 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
               : { ...t, launched: false },
           ),
         }));
-        // Sync the full template JSON into the backend `settings` column before activating
         const tpl = state.templates.find((t) => t.id === id);
-        const publish = tpl
-          ? templatesApi.update(id, { settings: { templateJson: JSON.stringify(tpl) } })
-          : Promise.resolve();
-        publish
-          .catch(() => {})
-          .finally(() => {
-            templatesApi.activate(id, slug).catch(() => {});
-          });
+        if (!tpl) return;
+        // The store only resolves if its row exists on the backend, so make sure
+        // the template is created there first, then publish its full JSON and
+        // set launched=true — otherwise /store/:username (and the @ link) 404.
+        const publish = (serverId: string) =>
+          templatesApi
+            .update(serverId, { settings: { templateJson: JSON.stringify(tpl) } })
+            .then(() => templatesApi.activate(serverId, slug))
+            .catch((e) => console.warn("[launch] publish failed:", e));
+        if (tpl.serverId) {
+          publish(tpl.serverId);
+          return;
+        }
+        templatesApi
+          .create({ name: tpl.name })
+          .then((res) => {
+            const created = (res as any).data ?? res;
+            const serverId = created?.id;
+            if (!serverId) throw new Error("create returned no id");
+            setState((s) => ({
+              ...s,
+              templates: s.templates.map((t) => (t.id === id ? { ...t, serverId } : t)),
+            }));
+            publish(serverId);
+          })
+          .catch((e) => console.warn("[launch] create failed:", e));
       },
       deactivateTemplate: (id) => {
+        const t = state.templates.find((x) => x.id === id);
         patchTemplateById(id, { launched: false });
-        templatesApi.deactivate(id).catch(() => {});
+        if (t?.serverId) templatesApi.deactivate(t.serverId).catch(() => {});
       },
 
       savedSections: state.savedSections ?? [],
