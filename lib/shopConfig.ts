@@ -44,6 +44,18 @@ export async function loadShopBaseUrl(): Promise<string> {
   return inflight;
 }
 
+/**
+ * Re-fetch the base URL, ignoring any previously cached value. Use this right
+ * before launching a store so the URL reflects the server's current
+ * SHOP_BASE_URL (e.g. after it points at a new frontend) — not a stale value
+ * cached earlier in the session.
+ */
+export async function refreshShopBaseUrl(): Promise<string> {
+  cachedBase = null;
+  inflight = null;
+  return loadShopBaseUrl();
+}
+
 /** Build a store URL: <base>/@<username> (base includes the "/@" suffix). */
 export function shopUrl(username?: string): string {
   const base = getShopBaseUrl();

@@ -207,7 +207,7 @@ export function StoreEditor({ templateId }: Props) {
     try {
       await Share.share({ message: json, title: "Store export" });
     } catch {
-      Alert.alert("Export", "Copy failed â€” try again.");
+      Alert.alert("Export", "Copy failed — try again.");
     }
   };
 
@@ -554,13 +554,13 @@ export function StoreEditor({ templateId }: Props) {
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 24 }}>
             {[
-              { icon: "eye", title: "Live preview", body: "The canvas above is a live preview of your store. Any change you make appears instantly â€” you don't need to save or refresh." },
+              { icon: "eye", title: "Live preview", body: "The canvas above is a live preview of your store. Any change you make appears instantly — you don't need to save or refresh." },
               { icon: "hand", title: "Tap a section to edit", body: "Tap any block in the preview to open its settings panel at the bottom. Change text, colors, images and spacing right there." },
               { icon: "layers", title: "Sections", body: "Your page is made of stacked sections (hero, product grid, text, etc.). Use the + Section button to add more, or the Sections tool to reorder and delete them." },
               { icon: "layout", title: "Navbar & footer", body: "The navbar (top) and footer (bottom) are shared across all pages. Tap them in the preview to edit the brand name, links, and layout." },
-              { icon: "file-text", title: "Pages", body: "Add multiple pages (Home, Shop, About, Contactâ€¦) using the Pages tool. Each page has its own set of sections. Links you add to pages appear automatically in the navbar." },
+              { icon: "file-text", title: "Pages", body: "Add multiple pages (Home, Shop, About, Contact…) using the Pages tool. Each page has its own set of sections. Links you add to pages appear automatically in the navbar." },
               { icon: "droplet", title: "Theme", body: "Set your brand colors, fonts, button shapes, and card styles from the Theme tool. These apply across all sections." },
-              { icon: "rotate-ccw", title: "Undo / redo", body: "The â† â†’ arrows at the top undo or redo any change. Nothing is permanent until you launch." },
+              { icon: "rotate-ccw", title: "Undo / redo", body: "The ← → arrows at the top undo or redo any change. Nothing is permanent until you launch." },
               { icon: "zap", title: "Launch your store", body: `When you're happy, tap Launch. Your store goes live at ${shopBaseHostname()}/@yourname and anyone can visit it.` },
               { icon: "monitor", title: "Mobile & web", body: "Your store works on both mobile and web browsers automatically. No extra setup needed." },
             ].map((item) => (
@@ -614,7 +614,7 @@ export function StoreEditor({ templateId }: Props) {
       {/* Launch success */}
       <Modal visible={launchOpen} animationType="slide" transparent>
         <View style={[styles.launchModal, { backgroundColor: colors.background, paddingBottom: insets.bottom + 20 }]}>
-          <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>ðŸŽ‰ Store is live!</Text>
+          <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>🎉 Store is live!</Text>
           {template.launchUrl ? (
             <View style={{ alignSelf: "center", marginTop: 12, width: 180, height: 180 }}>
               <Image
@@ -755,7 +755,7 @@ function BeginnerSetupGuide({
     {
       icon: "image",
       title: "2. Add a hero banner",
-      desc: "Your first impression â€” a big image or headline that grabs attention.",
+      desc: "Your first impression — a big image or headline that grabs attention.",
       action: "Add hero",
       color: "#0F766E",
       bg: "#F0FDFA",
@@ -764,7 +764,7 @@ function BeginnerSetupGuide({
     {
       icon: "shopping-bag",
       title: "3. Show your products",
-      desc: "Add a product grid â€” it will pull directly from your inventory.",
+      desc: "Add a product grid — it will pull directly from your inventory.",
       action: "Add shop grid",
       color: "#C2410C",
       bg: "#FFF7ED",
@@ -809,7 +809,7 @@ function BeginnerSetupGuide({
         </TouchableOpacity>
       ))}
       <Text style={[guide.tip, { color: colors.mutedForeground }]}>
-        ðŸ’¡ Tap any section in the preview to edit it. Tap the Tools button for more options.
+        💡 Tap any section in the preview to edit it. Tap the Tools button for more options.
       </Text>
     </View>
   );

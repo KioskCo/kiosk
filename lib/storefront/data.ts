@@ -1076,9 +1076,9 @@ export function getPageUrl(slug: string): string {
 }
 
 export const defaultHomeSections = (): Section[] => [
-  { id: uid(), type: "announcement", text: "Free shipping on orders over $150 â€” worldwide", link: "/shop" },
+  { id: uid(), type: "announcement", text: "Free shipping on orders over $150 — worldwide", link: "/shop" },
   {
-    id: uid(), type: "hero", eyebrow: "New Â· Autumn collection",
+    id: uid(), type: "hero", eyebrow: "New · Autumn collection",
     heading: "Considered objects for everyday life",
     body: "A small, slow shop of pieces designed in our studio and made by people we know.",
     image: HERO_IMAGE, ctaLabel: "Shop the collection", ctaLink: "/shop", align: "bottom-left", height: "lg",
@@ -1140,7 +1140,7 @@ export const defaultAboutSections = (): Section[] => [
   {
     id: uid(), type: "about", variant: "story",
     heading: "Our story",
-    body: "We started with a single idea: make things worth keeping. Every piece is designed in-house and crafted by makers we trust. From the materials we source to the people who shape them â€” quality and care run through everything we do.",
+    body: "We started with a single idea: make things worth keeping. Every piece is designed in-house and crafted by makers we trust. From the materials we source to the people who shape them — quality and care run through everything we do.",
     image: products[1].image,
     ctaLabel: "Shop now", ctaLink: "/shop",
   } as Section,
@@ -1149,7 +1149,7 @@ export const defaultAboutSections = (): Section[] => [
     columns: [
       { title: "Quality first", body: "Every item is hand-picked and quality checked before it reaches you." },
       { title: "Fast delivery", body: "We ship within 24 hours to all states across Nigeria." },
-      { title: "Easy returns", body: "Not happy? We'll make it right â€” no questions asked." },
+      { title: "Easy returns", body: "Not happy? We'll make it right — no questions asked." },
     ],
   } as Section,
 ];
@@ -1162,7 +1162,7 @@ export const defaultContactSections = (): Section[] => [
     email: "hello@yourbrand.com",
     phone: "+234 800 000 0000",
     address: "Lagos, Nigeria",
-    hours: "Mon â€“ Fri, 9am â€“ 6pm",
+    hours: "Mon – Fri, 9am – 6pm",
     showForm: true,
   } as Section,
 ];
@@ -1219,7 +1219,7 @@ export function createDefaultSection(type: SectionType): Section {
     case "video": return { id, type, heading: "Watch", url: "https://www.youtube.com/embed/dQw4w9WgXcQ" };
     case "spacer": return { id, type, size: "md" };
     case "related-products": return { id, type, heading: "You may also like", sourceSlug: products[0].slug, limit: 4 };
-    case "search": return { id, type, heading: "Search products", placeholder: "Searchâ€¦", showFilters: true };
+    case "search": return { id, type, heading: "Search products", placeholder: "Search…", showFilters: true };
     case "product-detail": return { id, type, productSlug: products[0].slug, extraImages: [] };
     case "checkout-form": return { id, type, heading: "Checkout" };
     case "contact-form": return { id, type, heading: "Get in touch", subheading: "Fill in the form below and we'll get back to you shortly." };
@@ -1299,7 +1299,7 @@ export function createDefaultSection(type: SectionType): Section {
       email: "hello@yourbrand.com",
       phone: "+234 800 000 0000",
       address: "123 Main Street, Lagos, Nigeria",
-      hours: "Mon â€“ Fri, 9am â€“ 6pm",
+      hours: "Mon – Fri, 9am – 6pm",
       showForm: true,
     };
     case "custom": return { id, type, label: "Custom section", blocks: [], gap: "md", align: "start" };
@@ -1476,7 +1476,7 @@ export type TemplatePreset = {
 };
 
 export const TEMPLATE_PRESETS: TemplatePreset[] = [
-  { key: "blank",   label: "Blank canvas",  description: "Start from scratch â€” empty home page", create: createEmptyTemplate, thumbnail: ATELIER_THUMB },
+  { key: "blank",   label: "Blank canvas",  description: "Start from scratch — empty home page", create: createEmptyTemplate, thumbnail: ATELIER_THUMB },
   { key: "atelier", label: "Atelier",        description: "Classic editorial fashion store",       create: createBlankTemplate, thumbnail: ATELIER_THUMB },
 ];
 

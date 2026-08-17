@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { templatesApi } from "@/lib/api";
-import { shopUrl } from "@/lib/shopConfig";
+import { refreshShopBaseUrl, shopUrl } from "@/lib/shopConfig";
 import React, {
   createContext,
   useCallback,
@@ -454,7 +454,10 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
         setActivePageIdState(t.pages[0].id);
         return t.id;
       },
-      launchTemplate: (id, username) => {
+      launchTemplate: async (id, username) => {
+        // Re-fetch the store base URL so a stale cached value (e.g. the server's
+        // old SHOP_BASE_URL fallback) can't bake a dead domain into the link.
+        await refreshShopBaseUrl().catch(() => {});
         const slug = (username ?? "").toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9_]/g, "");
         const launchUrl = shopUrl(slug);
         setState((s) => ({
@@ -470,11 +473,24 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
         // The store only resolves if its row exists on the backend, so make sure
         // the template is created there first, then publish its full JSON and
         // set launched=true — otherwise /store/:username (and the @ link) 404.
-        const publish = (serverId: string) =>
-          templatesApi
-            .update(serverId, { settings: { templateJson: JSON.stringify(tpl) } })
-            .then(() => templatesApi.activate(serverId, slug))
-            .catch((e) => console.warn("[launch] publish failed:", e));
+        const publish = async (serverId: string) => {
+          try {
+            await templatesApi.update(serverId, { settings: { templateJson: JSON.stringify(tpl) } });
+            const activated = await templatesApi.activate(serverId, slug);
+            // The backend is authoritative for the live URL — use whatever it
+            // stored (built from SHOP_BASE_URL) so the app shows the same link
+            // that order emails, the sitemap, and /store/:username report.
+            const serverUrl = ((activated as any).data ?? activated)?.launchUrl;
+            if (serverUrl) {
+              setState((s) => ({
+                ...s,
+                templates: s.templates.map((t) => (t.id === id ? { ...t, launchUrl: serverUrl } : t)),
+              }));
+            }
+          } catch (e) {
+            console.warn("[launch] publish failed:", e);
+          }
+        };
         if (tpl.serverId) {
           publish(tpl.serverId);
           return;
