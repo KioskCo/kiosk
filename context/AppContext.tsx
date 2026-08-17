@@ -916,6 +916,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (profile: BusinessProfile) => {
     await AsyncStorage.setItem("kiosk_auth", JSON.stringify(profile));
+    // Mark this device as onboarded so the "Get Started" screen never shows again
+    await AsyncStorage.setItem("kiosk_onboarding_done", "1");
     setState((prev) => ({ ...prev, isAuthenticated: true, profile }));
     loadApiData();
     registerPushToken(); // non-blocking — register for push notifications
@@ -925,6 +927,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.removeItem("kiosk_auth");
     await tokenStore.clear();
     await authApi.logout();
+    // Keep the "onboarded" flag after signing out so returning users land on
+    // Login — "Get Started" only shows for brand-new users on this device.
+    await AsyncStorage.setItem("kiosk_onboarding_done", "1");
     setState((prev) => ({ ...prev, isAuthenticated: false, profile: null }));
   }, []);
 

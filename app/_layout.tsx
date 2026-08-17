@@ -1,15 +1,16 @@
 import { useFonts } from "expo-font";
 import { useCallback, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Sentry from "@sentry/react-native";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -26,19 +27,37 @@ Sentry.init({
 
 SplashScreen.preventAutoHideAsync();
 
-// Check for OTA updates on launch — download silently, apply on next app open
-async function checkForUpdate() {
-  try {
-    if (__DEV__) return;
-    const race = (p: Promise<any>) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 8000))]);
-    const update: any = await race(Updates.checkForUpdateAsync());
-    if (update?.isAvailable) await race(Updates.fetchUpdateAsync());
-    // Update applied on next cold start — smoother than forcing a reload
-  } catch {
-    // network error or timeout — ignore, try again next launch
-  }
+// Shows a green "Updating…" bar while an OTA update downloads in the background,
+// then auto-restarts the app so the new version is applied immediately.
+function UpdateBanner() {
+  const insets = useSafeAreaInsets();
+  const { isDownloading, isUpdatePending, isRestarting, downloadProgress } = Updates.useUpdates();
+
+  useEffect(() => {
+    if (!isUpdatePending) return;
+    // Give the user a beat to see "Update ready — restarting…" before reloading
+    const t = setTimeout(() => {
+      Updates.reloadAsync().catch(() => {});
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [isUpdatePending]);
+
+  const applying = isUpdatePending || isRestarting;
+  if (!isDownloading && !applying) return null;
+
+  const pct = downloadProgress ? Math.min(100, Math.round(downloadProgress * 100)) : 0;
+
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999, paddingTop: insets.top }}>
+      <View style={{ backgroundColor: "#16A34A", paddingVertical: 10, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 13 }}>
+          {applying ? "Update ready — restarting…" : `Updating… ${pct}%`}
+        </Text>
+        <ActivityIndicator size="small" color="#FFFFFF" />
+      </View>
+    </View>
+  );
 }
-checkForUpdate();
 
 const queryClient = new QueryClient();
 
@@ -46,16 +65,27 @@ function AuthGate() {
   const { isAuthenticated, isAuthLoading } = useApp();
   const segments = useSegments();
   const router = useRouter();
+  const [onboarded, setOnboarded] = useState(false);
+
+  useEffect(() => {
+    // AsyncStorage read: once this device has onboarded, returning users land
+    // on Login instead of the "Get Started" welcome screen. Re-read on sign-out
+    // so the redirect uses a fresh value.
+    if (isAuthLoading) return;
+    if (!isAuthenticated) {
+      AsyncStorage.getItem("kiosk_onboarding_done").then((v) => setOnboarded(!!v));
+    }
+  }, [isAuthenticated, isAuthLoading]);
 
   useEffect(() => {
     if (isAuthLoading) return;
     const inAuthGroup = segments[0] === "(auth)";
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/(auth)" as any);
+      router.replace(onboarded ? ("/(auth)/login" as any) : ("/(auth)" as any));
     } else if (isAuthenticated && inAuthGroup) {
       router.replace("/(tabs)" as any);
     }
-  }, [isAuthenticated, isAuthLoading, segments]);
+  }, [isAuthenticated, isAuthLoading, segments, onboarded]);
 
   return null;
 }
@@ -189,6 +219,7 @@ function RootLayout() {
             </AppProvider>
           </QueryClientProvider>
         </ErrorBoundary>
+        <UpdateBanner />
       </SafeAreaProvider>
     </View>
   );

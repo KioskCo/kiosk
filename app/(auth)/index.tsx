@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Image,
   Platform,
@@ -37,6 +38,13 @@ export default function WelcomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  // "Get Started" is for brand-new users only — returning users go straight to Login
+  useEffect(() => {
+    AsyncStorage.getItem("kiosk_onboarding_done").then((v) => {
+      if (v) router.replace("/(auth)/login" as any);
+    });
+  }, [router]);
 
   return (
     <View
