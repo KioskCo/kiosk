@@ -220,7 +220,7 @@ export default function DiscountsScreen() {
           <View style={styles.overlay}>
             <View style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.handle} />
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
                 <Text style={[styles.sheetTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>New Discount Code</Text>
 
                 <Label text="CODE" colors={colors} />

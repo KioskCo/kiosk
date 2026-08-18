@@ -104,7 +104,7 @@ export default function WithdrawScreen() {
         <View style={styles.backBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <View style={[styles.balanceCard, { backgroundColor: colors.primary, borderRadius: colors.radius + 4 }]}>
           <MaterialCommunityIcons name="wallet" size={20} color="rgba(255,255,255,0.65)" />
           <Text style={styles.balanceLabel}>Available Balance</Text>

@@ -79,6 +79,7 @@ export default function DeliveryFeesScreen() {
         contentContainerStyle={[styles.content, { paddingTop: topPad + 12, paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         <View style={styles.header}>
           <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.muted }]} onPress={() => router.back()} activeOpacity={0.7}>

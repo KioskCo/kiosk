@@ -50,7 +50,7 @@ export function SectionsPanel({
       : "";
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Text style={[ps.h2, { color: colors.foreground }]}>Page & sections</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 12 }}>
@@ -153,7 +153,7 @@ export function PagesPanel({ colors }: { colors: ColorScheme }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Text style={[ps.h2, { color: colors.foreground }]}>Pages</Text>
       <View style={[ps.card, { borderColor: colors.border, marginTop: 12 }]}>
         <Text style={{ fontWeight: "600", marginBottom: 8, color: colors.foreground }}>New page</Text>
@@ -258,7 +258,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
   const showFoot = mode === "footer" || mode === "both";
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       {showNav && (
         <>
           <Text style={[ps.h2, { color: colors.foreground }]}>Top Menu</Text>
@@ -673,7 +673,7 @@ export function ThemePanelFull({ colors }: { colors: ColorScheme }) {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Text style={[ps.h2, { color: colors.foreground }]}>Theme</Text>
       <Text style={{ fontSize: 12, color: colors.mutedForeground, marginBottom: 12 }}>Colour mode</Text>
       <View style={{ flexDirection: "row", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
@@ -824,7 +824,7 @@ export function TemplatesPanelInEditor({ colors, onClose }: { colors: ColorSchem
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={[ps.h2, { color: colors.foreground }]}>Templates</Text>
         {onClose ? (
@@ -910,7 +910,7 @@ export function PaymentsPanelFull({ colors }: { colors: ColorScheme }) {
   ];
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Text style={[ps.h2, { color: colors.foreground }]}>Payments</Text>
       {options.map((opt) => (
         <TouchableOpacity
@@ -1077,7 +1077,7 @@ export function AddSectionPickerFull({ onAdd, onAddSaved, onClose, colors }: {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <Text style={[ps.h2, { color: colors.foreground }]}>{manageOpen ? "Saved sections" : "Add section"}</Text>
         <TouchableOpacity onPress={onClose} style={{ padding: 4 }}><Feather name="x" size={22} color={colors.mutedForeground} /></TouchableOpacity>

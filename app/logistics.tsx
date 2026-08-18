@@ -159,6 +159,8 @@ export default function LogisticsScreen() {
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         <View style={styles.statsRow}>
           <View style={[styles.statChip, { backgroundColor: "#ECFDF5", borderRadius: 10 }]}>

@@ -204,7 +204,7 @@ export default function BookDeliveryScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+<ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         {booked ? (
           <View style={[styles.successCard, { backgroundColor: "#ECFDF5", borderColor: "#A7F3D0", borderRadius: colors.radius }]}>
             <MaterialCommunityIcons name="check-circle" size={40} color="#10B981" />

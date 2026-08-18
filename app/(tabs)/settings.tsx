@@ -225,6 +225,8 @@ export default function SettingsScreen() {
         style={{ flex: 1, backgroundColor: colors.background }}
         contentContainerStyle={[styles.content, { paddingTop: topPad + 12, paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Settings</Text>
 
@@ -633,7 +635,7 @@ function AppModal({ title, visible, onClose, children }: { title: string; visibl
             <Feather name="x" size={16} color={colors.mutedForeground} />
           </TouchableOpacity>
         </View>
-        <ScrollView contentContainerStyle={styles.modalContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.modalContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           {children}
         </ScrollView>
       </View>

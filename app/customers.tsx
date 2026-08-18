@@ -191,6 +191,8 @@ export default function CustomersScreen() {
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 32 }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} tintColor={colors.primary} />}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets
         >
           {tab === "customers" ? (
             customers.length === 0
@@ -427,7 +429,7 @@ function CustomerDetailModal({
           ))}
         </View>
 
-        <ScrollView contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 80 }]} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 80 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           {detailTab === "info" ? (
             <View style={{ gap: 12 }}>
               <InfoRow icon="phone" label="Phone" value={customer.buyerPhone} colors={colors} />

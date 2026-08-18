@@ -242,6 +242,8 @@ export default function InventoryScreen() {
             <ScrollView
               contentContainerStyle={[styles.templatesContent, { paddingBottom: bottomPad + 20 }]}
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets
             >
               <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
                 <View style={{ flex: 1 }}>

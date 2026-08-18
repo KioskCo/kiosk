@@ -174,7 +174,7 @@ export function AddProductModal({ visible, onClose, onSave, editProduct }: AddPr
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
             {/* Main image */}
             <TouchableOpacity
               style={[styles.mainImageBox, { borderColor: imageUri ? colors.primary : colors.border, borderRadius: colors.radius }]}
