@@ -163,7 +163,7 @@ export function StoreEditor({ templateId }: Props) {
     setToolTab("global");
   };
 
-  const handleLaunch = () => {
+  const handleLaunch = async () => {
     if (!profile?.username) {
       Alert.alert("Profile required", "Complete your business profile before launching.");
       return;
@@ -174,9 +174,16 @@ export function StoreEditor({ templateId }: Props) {
       setSubscribeGateOpen(true);
       return;
     }
-    launchTemplate(templateId, profile.username);
+    const launched = await launchTemplate(templateId, profile.username);
     hapticNotification();
-    setLaunchOpen(true);
+    if (launched) {
+      setLaunchOpen(true);
+    } else {
+      Alert.alert(
+        "Launch failed",
+        "Your store couldn't be published. Check your internet connection and try again.",
+      );
+    }
   };
 
   const handleDeactivate = () => {

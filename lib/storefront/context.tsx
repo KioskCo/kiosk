@@ -82,7 +82,7 @@ export type StorefrontContextValue = {
   patchTemplate: (id: string, patch: Partial<Template>) => void;
   newTemplate: (name: string, factory?: (name: string) => Template) => string;
   newBlankTemplate: (name: string) => string;
-  launchTemplate: (id: string, username?: string) => void;
+  launchTemplate: (id: string, username?: string) => Promise<boolean>;
   deactivateTemplate: (id: string) => void;
   savedSections: SavedSection[];
   saveSection: (name: string, section: CustomSection) => void;
@@ -469,11 +469,18 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
           ),
         }));
         const tpl = state.templates.find((t) => t.id === id);
-        if (!tpl) return;
+        if (!tpl) return false;
+        const rollbackLaunch = () =>
+          setState((s) => ({
+            ...s,
+            templates: s.templates.map((t) =>
+              t.id === id ? { ...t, launched: false, launchUrl: t.launchUrl ?? undefined } : t,
+            ),
+          }));
         // The store only resolves if its row exists on the backend, so make sure
         // the template is created there first, then publish its full JSON and
         // set launched=true — otherwise /store/:username (and the @ link) 404.
-        const publish = async (serverId: string) => {
+        const publish = async (serverId: string): Promise<boolean> => {
           try {
             await templatesApi.update(serverId, { settings: { templateJson: JSON.stringify(tpl) } });
             const activated = await templatesApi.activate(serverId, slug);
@@ -487,27 +494,31 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
                 templates: s.templates.map((t) => (t.id === id ? { ...t, launchUrl: serverUrl } : t)),
               }));
             }
+            return true;
           } catch (e) {
             console.warn("[launch] publish failed:", e);
+            rollbackLaunch();
+            return false;
           }
         };
         if (tpl.serverId) {
-          publish(tpl.serverId);
-          return;
+          return publish(tpl.serverId);
         }
-        templatesApi
-          .create({ name: tpl.name })
-          .then((res) => {
-            const created = (res as any).data ?? res;
-            const serverId = created?.id;
-            if (!serverId) throw new Error("create returned no id");
-            setState((s) => ({
-              ...s,
-              templates: s.templates.map((t) => (t.id === id ? { ...t, serverId } : t)),
-            }));
-            publish(serverId);
-          })
-          .catch((e) => console.warn("[launch] create failed:", e));
+        try {
+          const res = await templatesApi.create({ name: tpl.name });
+          const created = (res as any).data ?? res;
+          const serverId = created?.id;
+          if (!serverId) throw new Error("create returned no id");
+          setState((s) => ({
+            ...s,
+            templates: s.templates.map((t) => (t.id === id ? { ...t, serverId } : t)),
+          }));
+          return publish(serverId);
+        } catch (e) {
+          console.warn("[launch] create failed:", e);
+          rollbackLaunch();
+          return false;
+        }
       },
       deactivateTemplate: (id) => {
         const t = state.templates.find((x) => x.id === id);
