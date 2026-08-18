@@ -649,6 +649,7 @@ function HeroBlock({
   const el = useContext(SectionElCtx);
   const { width: carouselW } = useWindowDimensions();
   const [carouselPage, setCarouselPage] = useState(0);
+  const carouselRef = useRef<ScrollView | null>(null);
   const overlayOpacity = ((s.overlayOpacity ?? 40) / 100);
   const overlayColor = s.overlayColor ?? "#000000";
   const alignStyle = heroAlignStyle(s.align ?? "bottom-left");
@@ -867,7 +868,6 @@ function HeroBlock({
       : [{ eyebrow: s.eyebrow, heading: s.heading, body: s.body, image: s.image, ctaLabel: s.ctaLabel, ctaLink: s.ctaLink }]
     ).filter(Boolean);
     const showArrows = s.showCarouselArrows !== false;
-    const carouselRef = useRef<ScrollView | null>(null);
     const scrollToPage = (page: number) =>
       carouselRef.current?.scrollTo({ x: page * winW, animated: true });
     return (
@@ -3797,6 +3797,11 @@ function KioskBlockRenderer({ block, elStyles, colors, onAction }: {
   const fire = (action?: import("@/lib/storefront").BlockAction) => {
     if (action && action.type !== "none" && onAction) onAction(action);
   };
+  const [accordionOpen, setAccordionOpen] = useState<Record<string, boolean>>({});
+  const [slideshowIdx, setSlideshowIdx] = useState(0);
+  const [slideshowW, setSlideshowW] = useState(0);
+  const cdTarget = block.type === "countdown" ? (block as import("@/lib/storefront").CountdownBlock).targetDate ?? "" : "";
+  const countdownT = useCountdown(cdTarget);
 
   if (block.type === "text") {
     const b = block as import("@/lib/storefront").TextBlock;
@@ -4099,7 +4104,8 @@ function KioskBlockRenderer({ block, elStyles, colors, onAction }: {
   if (block.type === "accordion") {
     const b = block as import("@/lib/storefront").AccordionBlock;
     const items = b.items ?? [];
-    const [open, setOpen] = useState<Record<string, boolean>>({});
+    const open = accordionOpen;
+    const setOpen = setAccordionOpen;
     return (
       <BlockReveal animation={b.animation}>
         <View style={{ gap: 8 }}>
@@ -4122,7 +4128,7 @@ function KioskBlockRenderer({ block, elStyles, colors, onAction }: {
 
   if (block.type === "countdown") {
     const b = block as import("@/lib/storefront").CountdownBlock;
-    const t = useCountdown(b.targetDate ?? "");
+    const t = countdownT;
     const cell = (v: number, l: string) => (
       <View style={{ alignItems: "center", backgroundColor: accent + "18", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, minWidth: 52 }}>
         <Text style={{ fontSize: 22, fontWeight: "800", color: fg }}>{String(v).padStart(2, "0")}</Text>
@@ -4151,8 +4157,8 @@ function KioskBlockRenderer({ block, elStyles, colors, onAction }: {
   if (block.type === "slideshow") {
     const b = block as import("@/lib/storefront").SlideshowBlock;
     const slides = b.slides ?? [];
-    const [idx, setIdx] = useState(0);
-    const [containerW, setContainerW] = useState(0);
+    const [idx, setIdx] = [slideshowIdx, setSlideshowIdx];
+    const [containerW, setContainerW] = [slideshowW, setSlideshowW];
     const ratio = { "16:9": 16 / 9, "4:3": 4 / 3, "1:1": 1, "3:2": 3 / 2 }[b.ratio ?? "16:9"] ?? 16 / 9;
     if (slides.length === 0) return null;
     const slideW = containerW || 1;

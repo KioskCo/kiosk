@@ -44,10 +44,38 @@ export const tokenStore = {
 
 // ─── Core request function ────────────────────────────────────────────────────
 
-async function request<T = unknown>(
+type RequestOpts = {
+  /** How long to wait before aborting (ms). Default 45000. */
+  timeout?: number;
+  /**
+   * How many extra attempts after the first (default 0).
+   * Only fires on transient failures: network errors, timeouts, 429, and 5xx.
+   * Client errors (4xx) are never retried.
+   * Leave at 0 for payment/order-creating calls — retrying those can double-charge
+   * or duplicate records when the server already succeeded but the response was lost.
+   */
+  retries?: number;
+  /** Base delay between retries (ms); grows linearly with each attempt. */
+  retryDelay?: number;
+};
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function isRetryableError(err: unknown): boolean {
+  if ((err as any)?.retryable === true) return true;
+  if ((err as Error)?.name === "AbortError") return true;
+  if (err instanceof TypeError) return true; // fetch network failure (DNS, refused, offline)
+  const status = (err as any)?.status as number | undefined;
+  return typeof status === "number" && (status >= 500 || status === 429);
+}
+
+async function attemptOnce<T = unknown>(
   method: string,
   path: string,
-  body?: unknown
+  body?: unknown,
+  timeout = 45000
 ): Promise<{ success: boolean; data?: T; error?: string; [key: string]: unknown }> {
   const token = await tokenStore.get();
 
@@ -62,7 +90,7 @@ async function request<T = unknown>(
   // Abort the request if the server doesn't respond in time, so the UI fails
   // fast with a clear error instead of hanging on an unreachable server.
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
+  const timer = setTimeout(() => controller.abort(), timeout);
 
   let response: Response;
   try {
@@ -74,11 +102,13 @@ async function request<T = unknown>(
     });
   } catch (err) {
     if ((err as Error)?.name === "AbortError") {
-      throw new Error("Request timed out — check your connection and the server address.");
+      const e = new Error("Request timed out — check your connection and the server address.");
+      (e as any).retryable = true;
+      throw e;
     }
     throw err;
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(timer);
   }
 
   // Parse JSON regardless of status code (errors also return JSON)
@@ -88,19 +118,38 @@ async function request<T = unknown>(
   }));
 
   if (!response.ok) {
-    throw new Error(json.error ?? `Request failed with status ${response.status}`);
+    const e = new Error(json.error ?? `Request failed with status ${response.status}`);
+    (e as any).status = response.status;
+    throw e;
   }
 
   return json;
 }
 
+async function request<T = unknown>(
+  method: string,
+  path: string,
+  body?: unknown,
+  opts: RequestOpts = {}
+): Promise<{ success: boolean; data?: T; error?: string; [key: string]: unknown }> {
+  const { timeout = 45000, retries = 0, retryDelay = 1200 } = opts;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await attemptOnce<T>(method, path, body, timeout);
+    } catch (err) {
+      if (attempt >= retries || !isRetryableError(err)) throw err;
+      await sleep(retryDelay * (attempt + 1));
+    }
+  }
+}
+
 // ─── Convenience methods ──────────────────────────────────────────────────────
 
 export const api = {
-  get: <T = unknown>(path: string) => request<T>("GET", path),
-  post: <T = unknown>(path: string, body?: unknown) => request<T>("POST", path, body),
-  patch: <T = unknown>(path: string, body?: unknown) => request<T>("PATCH", path, body),
-  delete: <T = unknown>(path: string, body?: unknown) => request<T>("DELETE", path, body),
+  get: <T = unknown>(path: string, opts?: RequestOpts) => request<T>("GET", path, undefined, opts),
+  post: <T = unknown>(path: string, body?: unknown, opts?: RequestOpts) => request<T>("POST", path, body, opts),
+  patch: <T = unknown>(path: string, body?: unknown, opts?: RequestOpts) => request<T>("PATCH", path, body, opts),
+  delete: <T = unknown>(path: string, body?: unknown, opts?: RequestOpts) => request<T>("DELETE", path, body, opts),
 };
 
 // ─── Auth API ─────────────────────────────────────────────────────────────────
@@ -108,12 +157,12 @@ export const api = {
 export const authApi = {
   /** Begin signup: send OTP to email. */
   signup(email: string, password: string, referralCode?: string) {
-    return api.post("/auth/signup", { email, password, referralCode });
+    return api.post("/auth/signup", { email, password, referralCode }, { retries: 2 });
   },
 
   /** Verify the email OTP after signup. Saves token on success. */
   async verifyEmail(email: string, otp: string) {
-    const res = await api.post<{ token: string; user: UserProfile }>("/auth/verify-email", { email, otp });
+    const res = await api.post<{ token: string; user: UserProfile }>("/auth/verify-email", { email, otp }, { retries: 2 });
     if (res.token) {
       await tokenStore.set(res.token as string);
     }
@@ -122,7 +171,7 @@ export const authApi = {
 
   /** Login with email + password. Returns JWT immediately (no OTP). */
   async login(email: string, password: string) {
-    const res = await api.post<{ token: string; user: UserProfile }>("/auth/login", { email, password });
+    const res = await api.post<{ token: string; user: UserProfile }>("/auth/login", { email, password }, { retries: 1 });
     if (res.token) {
       await tokenStore.set(res.token as string);
     }
@@ -131,7 +180,7 @@ export const authApi = {
 
   /** Resend the signup verification OTP. */
   resendOtp(email: string) {
-    return api.post("/auth/resend-otp", { email });
+    return api.post("/auth/resend-otp", { email }, { retries: 2 });
   },
 
   /** Get the current merchant's profile. */
@@ -172,12 +221,12 @@ export const authApi = {
 
   /** Step 1 of forgot-password: send a reset OTP to the email. */
   forgotPassword(email: string) {
-    return api.post("/auth/forgot-password", { email });
+    return api.post("/auth/forgot-password", { email }, { retries: 2 });
   },
 
   /** Step 2 of forgot-password: verify OTP and set a new password. */
   resetPassword(email: string, otp: string, newPassword: string) {
-    return api.post("/auth/reset-password", { email, otp, newPassword });
+    return api.post("/auth/reset-password", { email, otp, newPassword }, { retries: 2 });
   },
 };
 
@@ -237,7 +286,9 @@ export const ordersApi = {
     notes?: string;
     items: Array<{ productId?: string; productName: string; quantity: number; unitPrice: number }>;
   }) {
-    return api.post<Order>("/orders", data);
+    // Writes with side effects (order creation): never auto-retry — a retry could
+    // duplicate the order if the first attempt succeeded but the response was lost.
+    return api.post<Order>("/orders", data, { retries: 0 });
   },
 
   updateStatus(id: string, status: string, trackingId?: string, logisticsProvider?: string) {
@@ -261,7 +312,8 @@ export const ordersApi = {
 
 export const paymentsApi = {
   initialize(data: { orderId: string; provider?: "paystack" | "flutterwave"; buyerEmail?: string; callbackUrl?: string }) {
-    return api.post<{ paymentUrl: string; reference: string; provider: string }>("/payments/initialize", data);
+    // MONEY: never auto-retry — a retry could create a second payment reference/charge.
+    return api.post<{ paymentUrl: string; reference: string; provider: string }>("/payments/initialize", data, { retries: 0 });
   },
 
   verify(reference: string) {
@@ -357,10 +409,12 @@ export const templatesApi = {
     paymentGateways: string[]; thumbnail: string; whatsappLink: string;
     settings: Record<string, unknown>;
   }>) {
-    return api.patch<StoreTemplate>(`/templates/${id}`, data);
+    // PATCH is idempotent (full-state replace); safe to retry on network blips.
+    return api.patch<StoreTemplate>(`/templates/${id}`, data, { retries: 2 });
   },
   activate(id: string, username?: string) {
-    return api.post(`/templates/${id}/launch`, username ? { username } : undefined);
+    // Launch is a state setter (launched=true + launch_url) — retrying is safe.
+    return api.post(`/templates/${id}/launch`, username ? { username } : undefined, { retries: 2 });
   },
   deactivate(id: string) {
     return api.post(`/templates/${id}/deactivate`);
@@ -378,7 +432,8 @@ export const subscriptionsApi = {
   },
   /** Step 1: Get a payment URL for a plan. */
   initiatePay(plan: "3months" | "6months" | "yearly" | "custom", provider: "paystack" | "flutterwave", months?: number) {
-    return api.post<{ paymentUrl: string; reference: string; months: number; amount: number }>("/subscriptions/pay", { plan, provider, months });
+    // MONEY: never auto-retry — a retry could create a second payment reference/charge.
+    return api.post<{ paymentUrl: string; reference: string; months: number; amount: number }>("/subscriptions/pay", { plan, provider, months }, { retries: 0 });
   },
   /** Step 2: Activate after payment gateway confirms. */
   activate(data: { plan: "3months" | "6months" | "yearly" | "custom"; provider: string; reference: string; months?: number }) {
@@ -400,7 +455,8 @@ export const walletApi = {
     return api.get<WalletTransaction[]>(`/wallet/transactions${q}`);
   },
   withdraw(data: { amount: number; bankAccountId: string }) {
-    return api.post<{ reference: string; status: string }>("/wallet/withdraw", data);
+    // MONEY: never auto-retry — a retry could double-withdraw funds.
+    return api.post<{ reference: string; status: string }>("/wallet/withdraw", data, { retries: 0 });
   },
   addBankAccount(data: { bankCode?: string; bankName: string; accountNumber: string; accountName: string }) {
     return api.post("/wallet/banks", data);
@@ -457,7 +513,8 @@ export const referralApi = {
     return api.get<ReferralStats>("/referrals");
   },
   withdraw(amount: number) {
-    return api.post<{ amount: number; reference: string }>("/referrals/withdraw", { amount });
+    // MONEY: never auto-retry — a retry could double-withdraw funds.
+    return api.post<{ amount: number; reference: string }>("/referrals/withdraw", { amount }, { retries: 0 });
   },
 };
 
