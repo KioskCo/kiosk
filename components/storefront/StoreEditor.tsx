@@ -174,14 +174,14 @@ export function StoreEditor({ templateId }: Props) {
       setSubscribeGateOpen(true);
       return;
     }
-    const launched = await launchTemplate(templateId, profile.username);
+    const result = await launchTemplate(templateId, profile.username);
     hapticNotification();
-    if (launched) {
+    if (result.ok) {
       setLaunchOpen(true);
     } else {
       Alert.alert(
         "Launch failed",
-        "Your store couldn't be published. Check your internet connection and try again.",
+        result.error || "Your store couldn't be published. Check your internet connection and try again.",
       );
     }
   };

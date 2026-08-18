@@ -82,7 +82,7 @@ export type StorefrontContextValue = {
   patchTemplate: (id: string, patch: Partial<Template>) => void;
   newTemplate: (name: string, factory?: (name: string) => Template) => string;
   newBlankTemplate: (name: string) => string;
-  launchTemplate: (id: string, username?: string) => Promise<boolean>;
+  launchTemplate: (id: string, username?: string) => Promise<{ ok: boolean; error?: string }>;
   deactivateTemplate: (id: string) => void;
   savedSections: SavedSection[];
   saveSection: (name: string, section: CustomSection) => void;
@@ -469,7 +469,8 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
           ),
         }));
         const tpl = state.templates.find((t) => t.id === id);
-        if (!tpl) return false;
+        if (!tpl) return { ok: false, error: "Template not found" };
+        const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
         const rollbackLaunch = () =>
           setState((s) => ({
             ...s,
@@ -480,7 +481,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
         // The store only resolves if its row exists on the backend, so make sure
         // the template is created there first, then publish its full JSON and
         // set launched=true — otherwise /store/:username (and the @ link) 404.
-        const publish = async (serverId: string): Promise<boolean> => {
+        const publish = async (serverId: string): Promise<{ ok: boolean; error?: string }> => {
           try {
             await templatesApi.update(serverId, { settings: { templateJson: JSON.stringify(tpl) } });
             const activated = await templatesApi.activate(serverId, slug);
@@ -494,11 +495,11 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
                 templates: s.templates.map((t) => (t.id === id ? { ...t, launchUrl: serverUrl } : t)),
               }));
             }
-            return true;
+            return { ok: true };
           } catch (e) {
             console.warn("[launch] publish failed:", e);
             rollbackLaunch();
-            return false;
+            return { ok: false, error: errMsg(e) };
           }
         };
         if (tpl.serverId) {
@@ -517,7 +518,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
         } catch (e) {
           console.warn("[launch] create failed:", e);
           rollbackLaunch();
-          return false;
+          return { ok: false, error: errMsg(e) };
         }
       },
       deactivateTemplate: (id) => {
