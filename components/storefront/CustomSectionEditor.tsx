@@ -1217,6 +1217,21 @@ const NON_TEXT_BLOCKS = new Set<BlockType>(["icon", "image", "video", "row", "gr
 // duplicate here so there's only one obvious place to set it.
 const HAS_OWN_HEIGHT = new Set<BlockType>(["image", "video", "spacer"]);
 
+// "button" already has its own Content-tab "Full width" switch writing the same
+// styles.width field — don't show a second, differently-shaped control for it.
+const HAS_OWN_WIDTH = new Set<BlockType>(["button"]);
+
+// "auto" (not undefined/"") for "Fit content" — an explicit string survives the
+// JSON.stringify round-trip on save/publish; undefined keys are dropped by JSON
+// and would silently revert group/layout-box back to their forced full width.
+const WIDTH_OPTIONS: { value: string; label: string }[] = [
+  { value: "auto", label: "Fit content" },
+  { value: "100%", label: "Full width" },
+  { value: "66.666%", label: "2/3" },
+  { value: "50%", label: "Half" },
+  { value: "33.333%", label: "1/3" },
+];
+
 function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onChange: (p: Partial<CustomBlock>) => void; colors: ColorScheme }) {
   const b = block as any;
   const st: any = b.styles ?? {};
@@ -1275,6 +1290,16 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
           <PxStepper label="Min height" value={unPx(st.minHeight)} max={800} step={20} onChange={(v) => setStyle({ minHeight: pxOf(v) })} colors={colors} />
         </Field>
       )}
+      {!HAS_OWN_WIDTH.has(block.type) && (
+        <Field label="Width" colors={colors}>
+          <ChipRow<string>
+            options={WIDTH_OPTIONS}
+            value={st.width != null ? String(st.width) : undefined}
+            onChange={(v) => setStyle({ width: v })}
+            colors={colors}
+          />
+        </Field>
+      )}
       <Field label="Corner radius" colors={colors}>
         <PxStepper label="Radius" value={unPx(st.borderRadius)} max={48} step={4} onChange={(v) => setStyle({ borderRadius: pxOf(v) })} colors={colors} />
       </Field>
@@ -1289,6 +1314,9 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
           colors={colors}
         />
       </Field>
+      <Text style={[{ fontSize: 11, fontWeight: "600", marginTop: 8, marginBottom: 2 }, { color: colors.mutedForeground }]}>Space around this block</Text>
+      <PxStepper label="Space above" value={unPx(st.marginTop)} max={200} step={8} onChange={(v) => setStyle({ marginTop: pxOf(v) })} onClear={() => setStyle({ marginTop: undefined })} colors={colors} />
+      <PxStepper label="Space below" value={unPx(st.marginBottom)} max={200} step={8} onChange={(v) => setStyle({ marginBottom: pxOf(v) })} onClear={() => setStyle({ marginBottom: undefined })} colors={colors} />
       <Field label="Opacity" colors={colors}>
         <PxStepper label="Opacity %" value={st.opacity != null ? num(st.opacity) * 100 : undefined} max={100} step={5} onChange={(v) => setStyle({ opacity: v != null ? v / 100 : undefined })} colors={colors} />
       </Field>

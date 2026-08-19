@@ -887,8 +887,8 @@ function InspectorSheetOverlay({ selected, chromeSel, navbar, footer, colors, in
         <View style={[iStyles.floatPreview, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[iStyles.floatLabelTop, { backgroundColor: colors.background + "f0", borderBottomColor: colors.border }]}>
             <Feather name="eye" size={11} color={colors.primary} />
-            <Text style={{ fontSize: 11, color: colors.primary, marginLeft: 4, fontWeight: "600" }}>{title} Â· live preview</Text>
-            <Text style={{ fontSize: 10, color: colors.mutedForeground, marginLeft: "auto" }}>scroll â†•</Text>
+            <Text style={{ fontSize: 11, color: colors.primary, marginLeft: 4, fontWeight: "600" }}>{title} · live preview</Text>
+            <Text style={{ fontSize: 10, color: colors.mutedForeground, marginLeft: "auto" }}>scroll ↕</Text>
           </View>
           <ScrollView
             style={iStyles.floatContent}
@@ -910,7 +910,10 @@ function InspectorSheetOverlay({ selected, chromeSel, navbar, footer, colors, in
       )}
 
       {/* Editor sheet */}
-      <Animated.View style={[iStyles.sheet, { backgroundColor: colors.background, paddingBottom: kbHeight > 0 ? 8 : insets.bottom + 12, bottom: Platform.OS === "ios" ? kbHeight : 0, transform: [{ translateY }] }]}>
+      {/* This sheet is an absolute overlay, not part of the resizable root layout,
+          so Android's adjustResize doesn't shift it above the keyboard on its own —
+          shift it manually on both platforms, same as iOS already needed. */}
+      <Animated.View style={[iStyles.sheet, { backgroundColor: colors.background, paddingBottom: kbHeight > 0 ? 8 : insets.bottom + 12, bottom: kbHeight, transform: [{ translateY }] }]}>
         {/* Drag handle â€” pan to dismiss */}
         <View {...panResponder.panHandlers} style={iStyles.handleZone}>
           <View style={[iStyles.handle, { backgroundColor: colors.border }]} />
