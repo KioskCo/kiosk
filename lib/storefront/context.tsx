@@ -142,6 +142,27 @@ function reIdSections(sections: Section[]): Section[] {
   });
 }
 
+/**
+ * Undo/redo should only travel through content edits — never rewrite which
+ * template is live, its backend link, or its published URL. Launching/
+ * deactivating a store bypasses recordHistory precisely so it isn't part of
+ * the undo stack, but a plain content edit's history snapshot still carries
+ * whatever launched/launchUrl/serverId happened to be true at that moment —
+ * so undoing far enough back could silently flip a live store back to
+ * "not launched" (and stop it from syncing further edits) with no explicit
+ * deactivate action. Restore content from history but keep publish state as
+ * it is right now.
+ */
+function preservePublishState(target: Persisted, current: Persisted): Persisted {
+  return {
+    ...target,
+    templates: target.templates.map((t) => {
+      const live = current.templates.find((c) => c.id === t.id);
+      return live ? { ...t, serverId: live.serverId, launched: live.launched, launchUrl: live.launchUrl } : t;
+    }),
+  };
+}
+
 export function reIdBlocks(blocks: CustomBlock[]): CustomBlock[] {
   return blocks.map((b) => {
     const nb: any = { ...b, id: uid() };
@@ -276,7 +297,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
       // Reset debounce timer so the next edit after undo records a fresh history entry
       lastHistoryTimeRef.current = 0;
       // Batch all state updates together — single render
-      setState(prev);
+      setState(preservePublishState(prev, stateRef.current));
       setCanUndo(historyRef.current.length > 0);
       setCanRedo(true);
     };
@@ -287,7 +308,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
       historyRef.current = [...historyRef.current.slice(-29), stateRef.current];
       futureRef.current = futureRef.current.slice(1);
       lastHistoryTimeRef.current = 0;
-      setState(next);
+      setState(preservePublishState(next, stateRef.current));
       setCanUndo(true);
       setCanRedo(futureRef.current.length > 0);
     };
