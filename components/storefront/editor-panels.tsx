@@ -456,6 +456,32 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               colors={colors}
             />
           </Field>
+          <Field label="Mobile menu panel" colors={colors}>
+            <ChipRow
+              options={[
+                { value: "left", label: "Left drawer" },
+                { value: "right", label: "Right drawer" },
+                { value: "bottom", label: "Bottom sheet" },
+                { value: "fullscreen", label: "Fullscreen" },
+              ]}
+              value={navbar.mobileMenuStyle ?? "left"}
+              onChange={(v) => updateNavbar({ mobileMenuStyle: v as any })}
+              colors={colors}
+            />
+          </Field>
+          <Field label="Cart panel" colors={colors}>
+            <ChipRow
+              options={[
+                { value: "right", label: "Right drawer" },
+                { value: "left", label: "Left drawer" },
+                { value: "bottom", label: "Bottom sheet" },
+                { value: "center", label: "Centered" },
+              ]}
+              value={navbar.cartDrawerStyle ?? "right"}
+              onChange={(v) => updateNavbar({ cartDrawerStyle: v as any })}
+              colors={colors}
+            />
+          </Field>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14, marginBottom: 4 }}>
             <Text style={{ fontWeight: "600", color: colors.foreground }}>Top Menu Buttons</Text>
             {(navbar.ctaButtons ?? []).length < 3 && (

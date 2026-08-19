@@ -928,6 +928,10 @@ export type SidebarListStyle = "plain" | "chevron" | "arrow" | "dot" | "numbered
 export type NavbarLayout = "logo-left" | "logo-center" | "logo-right";
 export type NavbarStyle = "default" | "transparent" | "filled" | "minimal" | "bordered";
 export type NavbarSearchStyle = "dropdown" | "expand" | "slide" | "overlay" | "drawer" | "bar-top";
+/** Which edge/shape the mobile menu (hamburger) panel opens from. */
+export type MobileMenuStyle = "left" | "right" | "bottom" | "fullscreen";
+/** Which edge/shape the cart panel opens from. */
+export type CartDrawerStyle = "right" | "left" | "bottom" | "center";
 export type NavbarConfig = {
   brand: string;
   logoImage?: string;
@@ -968,6 +972,10 @@ export type NavbarConfig = {
   brandFont?: FontHeading;
   /** Custom font size for the brand name (default: 22) */
   brandFontSize?: number;
+  /** Which edge/shape the mobile menu panel opens from (default: "left") */
+  mobileMenuStyle?: MobileMenuStyle;
+  /** Which edge/shape the cart panel opens from (default: "right") */
+  cartDrawerStyle?: CartDrawerStyle;
   /** Standalone CTA buttons shown in navbar and optionally sidebar — NOT navlinks. Up to 3. */
   ctaButtons?: Array<{
     label: string;

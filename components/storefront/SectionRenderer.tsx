@@ -685,7 +685,12 @@ function HeroBlock({
           ]}>
             <Image source={{ uri: s.image }} style={[{ width: "100%", height: "100%" }, el.image as object]} contentFit="cover" />
           </Animated.View>
-        ) : null}
+        ) : (
+          // The overlay text below is always white — no image means no dark
+          // photo to sit on, so give it a fixed dark placeholder instead of
+          // whatever's behind (usually the light theme background).
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />
+        )}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: overlayColor, opacity: overlayOpacity }]} />
         <View style={{ flex: 1, ...alignStyle, padding: 20 }}>
           {textContent(true)}
@@ -884,7 +889,10 @@ function HeroBlock({
               <View key={i} style={{ width: winW, height, overflow: "hidden" }}>
                 {slide.image
                   ? <Image source={{ uri: slide.image }} style={[{ width: "100%", height: "100%" }, el.image as object]} contentFit="cover" />
-                  : <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.backgroundColor }]} />}
+                  /* Slide text is always white — a light theme background here (colors.backgroundColor)
+                     left it barely legible even with the overlay on top. Use a fixed dark placeholder
+                     instead, same as a real photo would give the overlay to work with. */
+                  : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: overlayColor, opacity: overlayOpacity }]} />
                 <View style={{ flex: 1, justifyContent: "flex-end", padding: 20 }}>
                   {slide.eyebrow ? <Text style={[{ fontSize: 11, color: "#ddd", marginBottom: 2 }, el.eyebrow as object]}>{slide.eyebrow}</Text> : null}
