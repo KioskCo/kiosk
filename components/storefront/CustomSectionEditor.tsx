@@ -822,7 +822,7 @@ function BlockContentEditor({ block, onChange, colors }: { block: CustomBlock; o
           </Field>
           <SwitchRow label="Stack on mobile" value={b.stackOnMobile !== false} onValueChange={(v) => onChange({ stackOnMobile: v })} colors={colors} />
           <Text style={{ fontSize: 11, color: colors.mutedForeground, lineHeight: 16 }}>
-            Tip: tap "Open" on the row to add blocks inside each column.
+            Tip: tap "Open" on the row to add blocks inside each column. Need it taller? Switch to the Style tab → Min height.
           </Text>
         </>
       );
@@ -968,7 +968,7 @@ function BlockContentEditor({ block, onChange, colors }: { block: CustomBlock; o
             />
           </Field>
           <Text style={{ fontSize: 11, color: colors.mutedForeground, lineHeight: 16 }}>
-            Tip: tap "Open" on this container to add blocks inside it.
+            Tip: tap "Open" on this container to add blocks inside it. Need it taller? Switch to the Style tab → Min height.
           </Text>
         </>
       );
@@ -1203,6 +1203,20 @@ const FONT_WEIGHTS = [
   { value: "400", label: "400" }, { value: "600", label: "600" }, { value: "700", label: "700" }, { value: "800", label: "800" },
 ];
 
+// Blocks whose Content tab already covers 100% of what they can look like
+// (Spacer = height only, Divider = color/thickness/style). Showing the full
+// generic style panel for these just adds controls that quietly do nothing.
+const NO_STYLE_PANEL = new Set<BlockType>(["spacer", "divider"]);
+
+// Blocks that don't carry their own text — hide font/text-color controls that
+// either don't apply or (for icon) are silently overridden by a dedicated
+// Content-tab color field, so they'd look editable but never visibly change.
+const NON_TEXT_BLOCKS = new Set<BlockType>(["icon", "image", "video", "row", "group", "layout-box", "product-embed", "slideshow"]);
+
+// Blocks whose Content tab already has a dedicated Height control — skip the
+// duplicate here so there's only one obvious place to set it.
+const HAS_OWN_HEIGHT = new Set<BlockType>(["image", "video", "spacer"]);
+
 function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onChange: (p: Partial<CustomBlock>) => void; colors: ColorScheme }) {
   const b = block as any;
   const st: any = b.styles ?? {};
@@ -1213,32 +1227,54 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
     onChange(rest);
   };
 
+  if (NO_STYLE_PANEL.has(block.type)) {
+    return (
+      <Text style={{ fontSize: 12, color: colors.mutedForeground, lineHeight: 17 }}>
+        Everything for this block lives on the Content tab — there's nothing extra to style here.
+      </Text>
+    );
+  }
+
+  const isTextual = !NON_TEXT_BLOCKS.has(block.type);
+  const showHeight = !HAS_OWN_HEIGHT.has(block.type);
+
   return (
     <View style={{ gap: 2 }}>
-      <ColorField label="Text color" value={st.color} onChange={(v) => setStyle({ color: v })} colors={colors} />
+      {isTextual && (
+        <ColorField label="Text color" value={st.color} onChange={(v) => setStyle({ color: v })} colors={colors} />
+      )}
       <ColorField label="Background" value={st.backgroundColor} onChange={(v) => setStyle({ backgroundColor: v })} colors={colors} />
-      <Field label="Font size" colors={colors}>
-        <PxStepper label="Font size" value={unPx(st.fontSize)} max={96} step={2} onChange={(v) => setStyle({ fontSize: pxOf(v) })} colors={colors} />
-      </Field>
-      <Field label="Font weight" colors={colors}>
-        <ChipRow<string>
-          options={FONT_WEIGHTS}
-          value={st.fontWeight}
-          onChange={(v) => setStyle({ fontWeight: v })}
-          colors={colors}
-        />
-      </Field>
-      <Field label="Text alignment" colors={colors}>
-        <ChipRow<"left" | "center" | "right">
-          options={[{ value: "left", label: "Left" }, { value: "center", label: "Center" }, { value: "right", label: "Right" }]}
-          value={st.textAlign}
-          onChange={(v) => setStyle({ textAlign: v })}
-          colors={colors}
-        />
-      </Field>
+      {isTextual && (
+        <>
+          <Field label="Font size" colors={colors}>
+            <PxStepper label="Font size" value={unPx(st.fontSize)} max={96} step={2} onChange={(v) => setStyle({ fontSize: pxOf(v) })} colors={colors} />
+          </Field>
+          <Field label="Font weight" colors={colors}>
+            <ChipRow<string>
+              options={FONT_WEIGHTS}
+              value={st.fontWeight}
+              onChange={(v) => setStyle({ fontWeight: v })}
+              colors={colors}
+            />
+          </Field>
+          <Field label="Text alignment" colors={colors}>
+            <ChipRow<"left" | "center" | "right">
+              options={[{ value: "left", label: "Left" }, { value: "center", label: "Center" }, { value: "right", label: "Right" }]}
+              value={st.textAlign}
+              onChange={(v) => setStyle({ textAlign: v })}
+              colors={colors}
+            />
+          </Field>
+        </>
+      )}
       <Field label="Padding" colors={colors}>
         <PxStepper label="Padding" value={unPx(st.padding)} max={80} step={4} onChange={(v) => setStyle({ padding: pxOf(v) })} colors={colors} />
       </Field>
+      {showHeight && (
+        <Field label="Min height" colors={colors}>
+          <PxStepper label="Min height" value={unPx(st.minHeight)} max={800} step={20} onChange={(v) => setStyle({ minHeight: pxOf(v) })} colors={colors} />
+        </Field>
+      )}
       <Field label="Corner radius" colors={colors}>
         <PxStepper label="Radius" value={unPx(st.borderRadius)} max={48} step={4} onChange={(v) => setStyle({ borderRadius: pxOf(v) })} colors={colors} />
       </Field>

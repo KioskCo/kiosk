@@ -12,7 +12,7 @@ export const ALL_SECTION_TYPES: SectionType[] = [
 
 export const SELF_PADDED_TYPES = new Set<SectionType>([
   "announcement", "hero", "spacer", "newsletter", "cta-banner", "product-detail",
-  "checkout-form", "contact-form", "shop-grid",
+  "checkout-form", "contact-form", "shop-grid", "custom",
 ]);
 
 export type StyleTarget =
@@ -212,6 +212,14 @@ export const SECTION_ELEMENT_TARGETS: Partial<Record<SectionType, { id: StyleTar
   "payment-methods": [
     { id: "heading", label: "Label" },
     { id: "card", label: "Method pill" },
+  ],
+  // Custom sections are block-based — most styling happens per-block (tap a block ›
+  // Style tab). These targets only cover a quick global override for every text/
+  // button block in the section at once, so only list the ones that actually apply.
+  custom: [
+    { id: "heading", label: "Headings" },
+    { id: "body", label: "Body text" },
+    { id: "button", label: "Buttons" },
   ],
 };
 
