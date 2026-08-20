@@ -161,6 +161,58 @@ function HeroSlidesEditor({
   );
 }
 
+function CarouselSlidesEditor({
+  slides,
+  onChange,
+  colors,
+}: {
+  slides: import("@/lib/storefront").CarouselSlide[];
+  onChange: (next: import("@/lib/storefront").CarouselSlide[]) => void;
+  colors: ColorScheme;
+}) {
+  const set = (i: number, patch: Partial<import("@/lib/storefront").CarouselSlide>) =>
+    onChange(slides.map((sl, j) => (j === i ? { ...sl, ...patch } : sl)));
+  return (
+    <View style={{ gap: 10 }}>
+      {slides.map((slide, i) => (
+        <View key={i} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+            <Text style={{ fontSize: 12, fontWeight: "700", color: colors.foreground }}>Slide {i + 1}</Text>
+            <TouchableOpacity onPress={() => onChange(slides.filter((_, j) => j !== i))}>
+              <Feather name="trash-2" size={16} color={colors.destructive ?? "#ef4444"} />
+            </TouchableOpacity>
+          </View>
+          <Field label="Image" colors={colors}>
+            <ImageField value={slide.image ?? ""} onChange={(v) => set(i, { image: v })} colors={colors} />
+          </Field>
+          <Field label="Eyebrow (optional)" colors={colors}>
+            <TextField value={slide.eyebrow ?? ""} onChangeText={(t) => set(i, { eyebrow: t || undefined })} colors={colors} />
+          </Field>
+          <Field label="Heading" colors={colors}>
+            <TextField value={slide.heading ?? ""} onChangeText={(t) => set(i, { heading: t })} colors={colors} />
+          </Field>
+          <Field label="Body (optional)" colors={colors}>
+            <TextField value={slide.body ?? ""} onChangeText={(t) => set(i, { body: t || undefined })} multiline colors={colors} />
+          </Field>
+          <Field label="Button label" colors={colors}>
+            <TextField value={slide.ctaLabel ?? ""} onChangeText={(t) => set(i, { ctaLabel: t || undefined })} colors={colors} />
+          </Field>
+          <Field label="Button link" colors={colors}>
+            <LinkField value={slide.ctaLink} onChange={(v) => set(i, { ctaLink: v || undefined })} colors={colors} />
+          </Field>
+        </View>
+      ))}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => onChange([...slides, { heading: `Slide ${slides.length + 1}`, image: "" }])}
+        style={{ borderWidth: 1, borderStyle: "dashed", borderColor: colors.primary, borderRadius: 10, paddingVertical: 12, alignItems: "center" }}
+      >
+        <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "600" }}>+ Add slide</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) => void, colors: ColorScheme) {
   switch (s.type) {
     case "announcement":
@@ -463,6 +515,57 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
               ) : null}
             </>
           )}
+        </>
+      );
+    }
+    case "carousel": {
+      const variants = SECTION_VARIANTS.carousel ?? [];
+      return (
+        <>
+          <Field label="Look" colors={colors}>
+            <ChipRow
+              options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))}
+              value={s.variant ?? "banner"}
+              onChange={(v) => on({ variant: v as any })}
+              colors={colors}
+              clearable={false}
+            />
+          </Field>
+          <View style={{ padding: 10, backgroundColor: colors.secondary, borderRadius: 8, marginBottom: 4 }}>
+            <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
+              {s.variant === "cards" ? "Cards — a horizontal row of peeking promo cards."
+                : s.variant === "fullwidth" ? "Fullwidth — one big edge-to-edge image per slide."
+                : s.variant === "thumbnail" ? "Thumbnail — a main slide with a tap-to-jump strip below."
+                : s.variant === "fade" ? "Fade — slides crossfade instead of sliding."
+                : "Banner — a wide, squat rotating strip that reads like an ad banner."}
+            </Text>
+          </View>
+          <Field label="Slides" colors={colors}>
+            <CarouselSlidesEditor slides={s.slides ?? []} onChange={(slides) => on({ slides } as any)} colors={colors} />
+          </Field>
+          <Field label="Height" colors={colors}>
+            <ChipRow
+              options={[{ value: "sm", label: "Small" }, { value: "md", label: "Medium" }, { value: "lg", label: "Large" }, { value: "full", label: "Full" }]}
+              value={s.height ?? "md"}
+              onChange={(v) => on({ height: v as any })}
+              colors={colors}
+              clearable={false}
+            />
+          </Field>
+          <SwitchRow label="Autoplay" value={s.autoplay !== false} onValueChange={(v) => on({ autoplay: v } as any)} colors={colors} />
+          {s.autoplay !== false && (
+            <Field label={`Autoplay speed — every ${s.autoplaySeconds ?? 5}s`} colors={colors}>
+              <ChipRow
+                options={[{ value: "3", label: "3s" }, { value: "5", label: "5s" }, { value: "7", label: "7s" }, { value: "10", label: "10s" }]}
+                value={String(s.autoplaySeconds ?? 5)}
+                onChange={(v) => on({ autoplaySeconds: Number(v) } as any)}
+                colors={colors}
+                clearable={false}
+              />
+            </Field>
+          )}
+          <SwitchRow label="Show arrows" value={s.showArrows !== false} onValueChange={(v) => on({ showArrows: v } as any)} colors={colors} />
+          <SwitchRow label="Show dots" value={s.showDots !== false} onValueChange={(v) => on({ showDots: v } as any)} colors={colors} />
         </>
       );
     }

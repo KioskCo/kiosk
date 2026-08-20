@@ -1029,6 +1029,7 @@ const SECTION_GROUPS: { label: string; items: SectionMeta[] }[] = [
     label: "Layout",
     items: [
       { type: "hero", icon: "image", desc: "Big banner with headline + CTA", color: "#4338ca", bg: "#eef2ff" },
+      { type: "carousel", icon: "repeat", desc: "Rotating banner, cards, or slideshow", color: "#0369a1", bg: "#eff6ff" },
       { type: "columns", icon: "columns", desc: "2–4 free-form columns", color: "#0f766e", bg: "#f0fdfa" },
       { type: "image-text", icon: "align-left", desc: "Image beside text block", color: "#b45309", bg: "#fffbeb" },
       { type: "rich-text", icon: "type", desc: "Headings, body copy, alignment", color: "#374151", bg: "#f9fafb" },

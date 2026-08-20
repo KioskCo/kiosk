@@ -19,6 +19,7 @@ import type {
   AuthSignupSection,
   BuyerOrdersSection,
   BuyerReferralsSection,
+  CarouselSection,
   CheckoutFormSection,
   ColumnItem,
   ColumnsSection,
@@ -410,6 +411,8 @@ export function SectionRenderer({ section, theme = "light", onLinkPress, compact
         return <AnnouncementBlock s={section} />;
       case "hero":
         return <HeroBlock s={section} theme={theme} compact={compact} onLinkPress={onLinkPress} imageParallaxTY={heroParallaxTY} />;
+      case "carousel":
+        return wrap(<CarouselSectionBlock s={section} colors={colors} onLinkPress={onLinkPress} />);
       case "columns":
         return wrap(<ColumnsBlock s={section} colors={colors} onLinkPress={onLinkPress} />);
       case "featured-products":
@@ -947,6 +950,224 @@ function HeroBlock({
       </View>
     </View>
   );
+}
+
+// ─── Carousel section (standalone) ─────────────────────────────────────────
+// Multiple visual variants — "banner" is the requested advert-banner look:
+// wide and squat with overlay text + a CTA, closer to a rotating promo strip
+// than a full hero. The others differ mainly in how much of the slide is
+// "chrome" (cards peek neighbours, fullwidth is edge-to-edge, thumbnail adds
+// a jump strip below, fade autoplays without swipe gestures).
+function CarouselSectionBlock({ s, colors, onLinkPress }: {
+  s: CarouselSection;
+  colors: ReturnType<typeof sectionColors>;
+  onLinkPress?: (href: string) => void;
+}) {
+  const variant = s.variant ?? "banner";
+  const slides = s.slides ?? [];
+  const { width: screenW } = useWindowDimensions();
+  const [page, setPage] = useState(0);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const showArrows = s.showArrows !== false;
+  const showDots = s.showDots !== false;
+  const autoplay = s.autoplay !== false;
+  const intervalMs = Math.max(2, s.autoplaySeconds ?? 5) * 1000;
+
+  const heightFor = (v: string) => {
+    if (v === "banner") return s.height === "sm" ? 130 : s.height === "lg" ? 220 : s.height === "full" ? 280 : 170;
+    if (v === "cards") return s.height === "sm" ? 200 : s.height === "lg" ? 340 : s.height === "full" ? 420 : 260;
+    return s.height === "sm" ? 260 : s.height === "lg" ? 460 : s.height === "full" ? 620 : 340; // fullwidth / thumbnail / fade
+  };
+  const height = heightFor(variant);
+  const cardW = screenW * 0.78;
+
+  const runFade = () => {
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const goTo = (i: number) => {
+    const clamped = Math.max(0, Math.min(slides.length - 1, i));
+    setPage(clamped);
+    if (variant === "fade") runFade();
+    else if (variant === "cards") scrollRef.current?.scrollTo({ x: clamped * (cardW + 12), animated: true });
+    else scrollRef.current?.scrollTo({ x: clamped * screenW, animated: true });
+  };
+
+  // Autoplay — advances on an interval; skipped entirely below 2 slides.
+  useEffect(() => {
+    if (!autoplay || slides.length < 2) return;
+    const id = setInterval(() => {
+      setPage((p) => {
+        const next = (p + 1) % slides.length;
+        if (variant === "fade") runFade();
+        else if (variant === "cards") scrollRef.current?.scrollTo({ x: next * (cardW + 12), animated: true });
+        else scrollRef.current?.scrollTo({ x: next * screenW, animated: true });
+        return next;
+      });
+    }, intervalMs);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplay, slides.length, intervalMs, variant, screenW]);
+
+  if (slides.length === 0) {
+    return (
+      <View style={{ height, backgroundColor: "#f3f3f3", alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: "#888", fontSize: 13 }}>Add slides to this carousel</Text>
+      </View>
+    );
+  }
+
+  const Btn = ({ label, link }: { label: string; link?: string }) => (
+    <TouchableOpacity
+      onPress={() => link && onLinkPress?.(link)}
+      style={{ marginTop: 10, alignSelf: "flex-start", paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999, backgroundColor: colors.accent ?? "#111" }}
+    >
+      <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  // ── FADE ──────────────────────────────────────────────────────────────────
+  if (variant === "fade") {
+    const slide = slides[page];
+    return (
+      <View style={{ height, overflow: "hidden" }}>
+        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+          {slide.image
+            ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.35)" }]} />
+          <View style={{ flex: 1, justifyContent: "flex-end", padding: 20 }}>
+            {slide.eyebrow ? <Text style={{ fontSize: 11, color: "#ddd", marginBottom: 2 }}>{slide.eyebrow}</Text> : null}
+            {slide.heading ? <Text style={{ fontSize: 22, fontWeight: "700", color: "#fff" }}>{slide.heading}</Text> : null}
+            {slide.body ? <Text style={{ color: "#eee", marginTop: 4 }}>{slide.body}</Text> : null}
+            {slide.ctaLabel ? <Btn label={slide.ctaLabel} link={slide.ctaLink} /> : null}
+          </View>
+        </Animated.View>
+        {showArrows && slides.length > 1 && <CarouselArrows onPrev={() => goTo(page - 1)} onNext={() => goTo(page + 1)} />}
+        {showDots && slides.length > 1 && <CarouselDotsRN count={slides.length} page={page} accent={colors.accent} />}
+      </View>
+    );
+  }
+
+  // ── CARDS ─────────────────────────────────────────────────────────────────
+  if (variant === "cards") {
+    return (
+      <View>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={cardW + 12}
+          decelerationRate="fast"
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / (cardW + 12)))}
+        >
+          {slides.map((slide, i) => (
+            <TouchableOpacity
+              key={i}
+              activeOpacity={slide.ctaLink ? 0.85 : 1}
+              onPress={() => slide.ctaLink && onLinkPress?.(slide.ctaLink)}
+              style={{ width: cardW, height, borderRadius: 16, overflow: "hidden" }}
+            >
+              {slide.image
+                ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.25)" }]} />
+              <View style={{ flex: 1, justifyContent: "flex-end", padding: 16 }}>
+                {slide.eyebrow ? <Text style={{ fontSize: 10, color: "#ddd", marginBottom: 2 }}>{slide.eyebrow}</Text> : null}
+                {slide.heading ? <Text style={{ fontSize: 18, fontWeight: "700", color: "#fff" }}>{slide.heading}</Text> : null}
+                {slide.ctaLabel ? <Text style={{ marginTop: 6, fontSize: 12, fontWeight: "700", color: "#fff", textDecorationLine: "underline" }}>{slide.ctaLabel}</Text> : null}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        {showDots && slides.length > 1 && <View style={{ marginTop: 8 }}><CarouselDotsRN count={slides.length} page={page} accent={colors.accent} inline /></View>}
+      </View>
+    );
+  }
+
+  // ── BANNER / FULLWIDTH / THUMBNAIL (all page full-bleed slides) ────────────
+  const isBanner = variant === "banner";
+  return (
+    <View>
+      <View style={{ height, position: "relative", overflow: "hidden" }}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / (screenW || 1)))}
+        >
+          {slides.map((slide, i) => (
+            <View key={i} style={{ width: screenW, height, overflow: "hidden" }}>
+              {slide.image
+                ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
+              {(slide.heading || slide.body || slide.ctaLabel) && (
+                <>
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(0,0,0,${isBanner ? 0.3 : 0.35})` }]} />
+                  <View style={{ flex: 1, justifyContent: isBanner ? "center" : "flex-end", alignItems: isBanner ? "center" : "flex-start", padding: isBanner ? 16 : 20 }}>
+                    {slide.eyebrow ? <Text style={{ fontSize: 11, color: "#ddd", marginBottom: 2, textAlign: isBanner ? "center" : "left" }}>{slide.eyebrow}</Text> : null}
+                    {slide.heading ? <Text style={{ fontSize: isBanner ? 20 : 24, fontWeight: "800", color: "#fff", textAlign: isBanner ? "center" : "left" }}>{slide.heading}</Text> : null}
+                    {slide.body ? <Text style={{ color: "#eee", marginTop: 4, textAlign: isBanner ? "center" : "left", fontSize: isBanner ? 12 : 14 }}>{slide.body}</Text> : null}
+                    {slide.ctaLabel ? (
+                      <View style={isBanner ? { alignItems: "center", width: "100%" } : undefined}>
+                        <Btn label={slide.ctaLabel} link={slide.ctaLink} />
+                      </View>
+                    ) : null}
+                  </View>
+                </>
+              )}
+            </View>
+          ))}
+        </ScrollView>
+        {showArrows && slides.length > 1 && <CarouselArrows onPrev={() => goTo(page - 1)} onNext={() => goTo(page + 1)} small={isBanner} />}
+        {showDots && slides.length > 1 && variant !== "thumbnail" && <CarouselDotsRN count={slides.length} page={page} accent={colors.accent} />}
+      </View>
+      {variant === "thumbnail" && slides.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 10, gap: 8 }}>
+          {slides.map((slide, i) => (
+            <TouchableOpacity key={i} onPress={() => goTo(i)} style={{ width: 56, height: 56, borderRadius: 8, overflow: "hidden", borderWidth: 2, borderColor: i === page ? (colors.accent ?? "#111") : "transparent" }}>
+              {slide.image
+                ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+function CarouselArrows({ onPrev, onNext, small }: { onPrev: () => void; onNext: () => void; small?: boolean }) {
+  const size = small ? 30 : 36;
+  return (
+    <>
+      <TouchableOpacity onPress={onPrev} style={{ position: "absolute", left: 10, top: "50%", marginTop: -size / 2, width: size, height: size, borderRadius: size / 2, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" }}>
+        <Feather name="chevron-left" size={small ? 16 : 20} color="#fff" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={onNext} style={{ position: "absolute", right: 10, top: "50%", marginTop: -size / 2, width: size, height: size, borderRadius: size / 2, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" }}>
+        <Feather name="chevron-right" size={small ? 16 : 20} color="#fff" />
+      </TouchableOpacity>
+    </>
+  );
+}
+
+function CarouselDotsRN({ count, page, accent, inline }: { count: number; page: number; accent?: string; inline?: boolean }) {
+  const dots = (
+    <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6 }}>
+      {Array.from({ length: count }, (_, i) => (
+        <View key={i} style={{ width: i === page ? 16 : 6, height: 6, borderRadius: 3, backgroundColor: i === page ? (accent ?? "#111") : "#cccccc99" }} />
+      ))}
+    </View>
+  );
+  if (inline) return dots;
+  return <View style={{ position: "absolute", bottom: 10, left: 0, right: 0 }}>{dots}</View>;
 }
 
 type CartBtnConfig = {

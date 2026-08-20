@@ -568,16 +568,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        const [token, cachedVal, dataVal] = await Promise.all([
+        const [token, cachedVal, dataVal, notifVal] = await Promise.all([
           tokenStore.get(),
           AsyncStorage.getItem("kiosk_auth"),
           AsyncStorage.getItem("kiosk_data"),
+          AsyncStorage.getItem("kiosk_notifications"),
         ]);
         const cached = cachedVal ? (JSON.parse(cachedVal) as BusinessProfile) : null;
 
         // Immediately unblock the UI — show dashboard if we have any cached session
         if (cached) {
           const dataCache = dataVal ? JSON.parse(dataVal) : null;
+          const notifCache = notifVal ? JSON.parse(notifVal) : null;
           setState((prev) => ({
             ...prev,
             isAuthenticated: true,
@@ -595,6 +597,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 startDate:  dataCache.subscription.startDate  ? new Date(dataCache.subscription.startDate)  : undefined,
                 expiryDate: dataCache.subscription.expiryDate ? new Date(dataCache.subscription.expiryDate) : undefined,
               } : prev.subscription,
+            } : {}),
+            ...(Array.isArray(notifCache) ? {
+              notifications: notifCache.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) })),
             } : {}),
           }));
           loadApiData();
@@ -1618,6 +1623,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     Notifications.setBadgeCountAsync(unreadCount).catch(() => {});
   }, [unreadCount]);
+
+  // Persist the notification drawer so it survives an app restart (kill +
+  // reopen, not just backgrounding) — it previously lived only in memory and
+  // reset to empty every time. Capped so a long-lived install doesn't grow
+  // this file forever; the drawer itself only ever shows what's here anyway.
+  // Skipped while isAuthLoading — state.notifications is still just its
+  // initial [] at that point, and saving it would overwrite the real
+  // persisted list a moment before the restore effect above applies it.
+  useEffect(() => {
+    if (state.isAuthLoading) return;
+    const capped = state.notifications.slice(0, 200);
+    AsyncStorage.setItem("kiosk_notifications", JSON.stringify(capped)).catch(() => {});
+  }, [state.notifications, state.isAuthLoading]);
 
   const addNotification = useCallback((notif: Omit<Notification, "id" | "timestamp" | "read">) => {
     setState((prev) => ({

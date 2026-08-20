@@ -163,6 +163,29 @@ export type HeroSection = SectionBase & {
   textBg?: string;           // panel bg for split / stacked / text-only
   imageBoxed?: boolean;      // boxed variants: show image in a card box (default true)
 };
+/** A single slide in a standalone Carousel section. */
+export type CarouselSlide = {
+  image?: string;
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaLink?: LinkTarget;
+};
+export type CarouselSection = SectionBase & {
+  type: "carousel";
+  slides: CarouselSlide[];
+  /** "banner" = wide rotating advert-banner look; "cards" = peeking side cards;
+   *  "fullwidth" = single full-bleed image per slide; "thumbnail" = big image +
+   *  clickable thumbnail strip; "fade" = crossfade instead of sliding. */
+  variant?: "banner" | "cards" | "fullwidth" | "thumbnail" | "fade";
+  autoplay?: boolean;
+  /** Seconds between auto-advances (default 5) */
+  autoplaySeconds?: number;
+  showArrows?: boolean;
+  showDots?: boolean;
+  height?: "sm" | "md" | "lg" | "full";
+};
 export type CartBtnStyle = "plus" | "cart" | "text" | "plus-text" | "cart-text";
 export type ProductCardVariant = "classic" | "minimal" | "overlay" | "horizontal" | "bordered" | "floating" | "editorial" | "chip" | "compact";
 export type FeaturedProductsSection = SectionBase & {
@@ -801,7 +824,7 @@ export type CustomSection = SectionBase & {
 };
 
 export type Section =
-  | AnnouncementSection | HeroSection | FeaturedProductsSection | ImageTextSection | RichTextSection
+  | AnnouncementSection | HeroSection | CarouselSection | FeaturedProductsSection | ImageTextSection | RichTextSection
   | GallerySection | CollectionListSection | NewsletterSection | CtaBannerSection | TextColumnsSection
   | TestimonialsSection | LogoBarSection | FaqSection | VideoSection | SpacerSection
   | RelatedProductsSection | SearchSection | ProductDetailSection | CheckoutFormSection | ContactFormSection
@@ -820,6 +843,7 @@ export const SECTION_LABELS: Record<SectionType, string> = {
   custom: "Custom section",
   announcement: "Announcement bar",
   hero: "Hero banner",
+  carousel: "Carousel",
   columns: "Columns (free layout)",
   "featured-products": "Featured products",
   "image-text": "Image with text",
@@ -868,6 +892,7 @@ export const SECTION_LABELS: Record<SectionType, string> = {
 /** Variant options per section type. Empty means single variant. */
 export const SECTION_VARIANTS: Partial<Record<SectionType, string[]>> = {
   hero: ["overlay", "split-right", "split-left", "stacked", "text-only", "fullscreen", "boxed-right", "boxed-left", "glass", "diagonal", "duo", "bold", "reveal", "carousel"],
+  carousel: ["banner", "cards", "fullwidth", "thumbnail", "fade"],
   "featured-products": ["grid", "list", "carousel"],
   testimonials: ["cards", "quotes", "grid"],
   "cta-banner": ["centered", "split"],
@@ -1200,6 +1225,14 @@ export function createDefaultSection(type: SectionType): Section {
       slides: [
         { heading: "New heading", body: "Short supporting copy goes here.", eyebrow: "New · Collection", image: HERO_IMAGE, ctaLabel: "Shop now", ctaLink: "/shop" },
         { heading: "Second slide", body: "A different message for the next banner.", eyebrow: "Coming soon", image: HERO_IMAGE, ctaLabel: "Explore", ctaLink: "/shop" },
+      ],
+    };
+    case "carousel": return {
+      id, type, variant: "banner", autoplay: true, autoplaySeconds: 5, showArrows: true, showDots: true, height: "md",
+      slides: [
+        { heading: "Big summer sale", body: "Up to 40% off storewide", image: HERO_IMAGE, ctaLabel: "Shop now", ctaLink: "/shop" },
+        { heading: "New arrivals", body: "Fresh drops every week", eyebrow: "Just in", image: products[0].image, ctaLabel: "Explore", ctaLink: "/shop" },
+        { heading: "Free delivery", body: "On every order over ₦25,000", image: products[1].image, ctaLabel: "Learn more", ctaLink: "/shop" },
       ],
     };
     case "featured-products": return { id, type, heading: "Featured products", productSlugs: products.slice(0, 3).map((p) => p.slug), columns: 3, variant: "grid" };

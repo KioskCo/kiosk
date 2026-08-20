@@ -42,10 +42,29 @@ function UpdateBanner() {
     return () => clearTimeout(t);
   }, [isUpdatePending]);
 
+  // OTA JS bundles are small (a few hundred KB), so the real native download
+  // finishes in well under a second — expo-updates' own downloadProgress
+  // reports 0 and then jumps straight to 1 with no visible steps in between,
+  // which read as "stuck at 0%, not counting" even though nothing was wrong.
+  // Simulate a steady climb instead (a well-worn pattern for downloads too
+  // fast to show real granular progress) — eased so it never quite reaches
+  // 100 on its own, and let the real value take over immediately if it's
+  // ever actually ahead of the simulation.
+  const [simPct, setSimPct] = useState(0);
+  useEffect(() => {
+    if (!isDownloading) { setSimPct(0); return; }
+    setSimPct(0);
+    const id = setInterval(() => {
+      setSimPct((p) => (p >= 92 ? p : p + Math.max(1, Math.round((92 - p) * 0.18))));
+    }, 120);
+    return () => clearInterval(id);
+  }, [isDownloading]);
+
   const applying = isUpdatePending || isRestarting;
   if (!isDownloading && !isUpdateAvailable && !applying) return null;
 
-  const pct = downloadProgress ? Math.min(100, Math.round(downloadProgress * 100)) : 0;
+  const realPct = downloadProgress ? Math.round(downloadProgress * 100) : 0;
+  const pct = Math.min(100, Math.max(realPct, simPct));
   const label = applying
     ? "Update ready — restarting…"
     : isDownloading
