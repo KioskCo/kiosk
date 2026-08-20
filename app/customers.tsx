@@ -181,6 +181,7 @@ export default function CustomersScreen() {
     setSendTargetIds(Array.from(selectedIds));
     setComposeVisible(true);
   };
+  const openComposeForOne = (id: string) => { setSendTargetIds([id]); setComposeVisible(true); };
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
@@ -360,9 +361,14 @@ export default function CustomersScreen() {
                         </Text>
                       </View>
                       {!selectMode && (
-                        <TouchableOpacity onPress={() => handleUnsubscribe(s.id)} style={styles.removeBtn}>
-                          <Feather name="x" size={16} color={colors.mutedForeground} />
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <TouchableOpacity onPress={() => openComposeForOne(s.id)} style={styles.removeBtn} hitSlop={6}>
+                            <Feather name="send" size={15} color={colors.primary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => handleUnsubscribe(s.id)} style={styles.removeBtn} hitSlop={6}>
+                            <Feather name="x" size={16} color={colors.mutedForeground} />
+                          </TouchableOpacity>
+                        </View>
                       )}
                     </TouchableOpacity>
                   );
@@ -434,7 +440,10 @@ export default function CustomersScreen() {
       >
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
           <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            {/* Modal renders full-screen (not inset-safe) on Android — presentationStyle="pageSheet"
+                is iOS-only, so without this the header sits under the status bar and Cancel/Send
+                become unreliable to tap (only their very bottom edge is actually on-screen). */}
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: insets.top + 16 }]}>
               <TouchableOpacity onPress={() => { setComposeVisible(false); setSendTargetIds(null); }} hitSlop={8}>
                 <Text style={[styles.modalCancel, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>Cancel</Text>
               </TouchableOpacity>
@@ -510,7 +519,7 @@ function CustomerDetailModal({
   onClose: () => void;
   formatDate: (s: string | null) => string;
   colors: ReturnType<typeof useColors>;
-  insets: { bottom: number };
+  insets: { top: number; bottom: number };
 }) {
   const ss = SEGMENT_STYLE[segment];
   const spent = parseFloat(customer.totalSpent || "0");
@@ -519,8 +528,8 @@ function CustomerDetailModal({
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
         {/* Modal header */}
-        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={onClose}>
+        <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: insets.top + 16 }]}>
+          <TouchableOpacity onPress={onClose} hitSlop={8}>
             <Text style={[styles.modalCancel, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>Close</Text>
           </TouchableOpacity>
           <Text style={[styles.modalTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Customer</Text>

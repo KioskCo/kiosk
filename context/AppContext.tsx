@@ -31,9 +31,23 @@ async function registerPushToken(): Promise<void> {
     const token = tokenData.data;
 
     if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
+      // Android locks a channel's importance/sound at creation — the app can
+      // never change it later for a channel ID that already exists on a
+      // device, only the user can via system settings. So this is a NEW
+      // channel id ("kiosk-alerts", not the old "default") rather than trying
+      // to tune the old one in place — that guarantees this actually takes
+      // effect for people who already had the old, too-aggressive channel.
+      // The server must send channelId: "kiosk-alerts" on every push (see
+      // lib/pushNotifications.ts) or Android silently falls back to its own
+      // generic default channel instead of this one.
+      //
+      // MAX was Android's most intrusive tier — reserved for things like
+      // incoming calls. HIGH still pops a heads-up banner and plays sound (so
+      // nothing is missed), just without being jarring for a newsletter
+      // signup or routine update.
+      await Notifications.setNotificationChannelAsync("kiosk-alerts", {
         name: "Kiosk Notifications",
-        importance: Notifications.AndroidImportance.MAX,
+        importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#6366F1",
       });
@@ -1597,6 +1611,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const unreadCount = state.notifications.filter((n) => !n.read).length;
+
+  // Keep the app icon's badge number in sync with unread notifications, so
+  // there's something to see on the home screen without opening the app —
+  // separate from (and in addition to) the OS notification itself.
+  useEffect(() => {
+    Notifications.setBadgeCountAsync(unreadCount).catch(() => {});
+  }, [unreadCount]);
 
   const addNotification = useCallback((notif: Omit<Notification, "id" | "timestamp" | "read">) => {
     setState((prev) => ({
