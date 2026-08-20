@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
-import { FlatList, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, Modal, PanResponder, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useLinkOptions } from "@/lib/storefront";
 import { products } from "@/lib/storefront/products";
@@ -254,6 +254,8 @@ export function SliderControl({
 }) {
   const [trackWidth, setTrackWidth] = useState(0);
   const [dragValue, setDragValue] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const trackWidthRef = useRef(0);
   const displayValue = dragValue ?? value;
 
   const valueFromX = (x: number, w: number) => {
@@ -263,12 +265,34 @@ export function SliderControl({
     return Math.max(min, Math.min(max, stepped));
   };
 
-  const handleTouch = (e: { nativeEvent: { locationX: number } }) => {
-    if (!trackWidth) return;
-    const v = valueFromX(e.nativeEvent.locationX, trackWidth);
+  const handleTouch = (locationX: number) => {
+    const w = trackWidthRef.current;
+    if (!w) return;
+    const v = valueFromX(locationX, w);
     setDragValue(v);
     onChange(v);
   };
+
+  // This lives inside ScrollViews throughout the editor. Claiming the responder
+  // on touch-down (onStartShouldSetResponder: true) meant a scroll gesture that
+  // merely started on top of the slider got hijacked the instant the finger
+  // landed, before any movement direction was known — the scroll stopped and
+  // the slider silently jumped to wherever the touch happened to be. Only
+  // claiming once the move is clearly more horizontal than vertical (a real
+  // drag along the track) lets an accidental touch-during-scroll pass through
+  // to the ScrollView untouched, the way a native slider would behave.
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderGrant: (e) => { setDragging(true); handleTouch(e.nativeEvent.locationX); },
+      onPanResponderMove: (e) => handleTouch(e.nativeEvent.locationX),
+      onPanResponderRelease: () => { setDragValue(null); setDragging(false); },
+      onPanResponderTerminate: () => { setDragValue(null); setDragging(false); },
+    })
+  ).current;
 
   const pct = max > min ? ((displayValue - min) / (max - min)) * 100 : 0;
 
@@ -281,13 +305,12 @@ export function SliderControl({
         </Text>
       </View>
       <View
-        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderGrant={handleTouch}
-        onResponderMove={handleTouch}
-        onResponderRelease={() => setDragValue(null)}
-        style={{ height: 28, justifyContent: "center" }}
+        onLayout={(e) => { setTrackWidth(e.nativeEvent.layout.width); trackWidthRef.current = e.nativeEvent.layout.width; }}
+        {...panResponder.panHandlers}
+        // A bigger invisible hit area than the visual track makes the thumb easier
+        // to grab without enlarging the slider itself.
+        hitSlop={{ top: 12, bottom: 12 }}
+        style={{ height: 28, justifyContent: "center", opacity: dragging ? 0.9 : 1 }}
       >
         <View style={{ height: 4, borderRadius: 2, backgroundColor: colors.border }}>
           <View style={{ height: 4, borderRadius: 2, width: `${pct}%`, backgroundColor: colors.primary }} />

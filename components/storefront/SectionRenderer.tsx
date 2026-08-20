@@ -982,14 +982,11 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
   };
   const height = heightFor(variant);
   const cardW = screenW * 0.78;
-  // Rounds each slide's image/card — never the section itself. Full-bleed
-  // variants (banner/fullwidth/thumbnail's main slide, fade) are edge-to-edge
-  // by default, where rounded corners would just be clipped by the screen
-  // edge and invisible — so rounding those insets the image slightly (an
-  // explicit choice, only once a radius is actually set) rather than silently
-  // doing nothing. Cards/thumbnails are never edge-to-edge, so they round in place.
+  // Rounds each slide's image/card — never the section itself. Applied
+  // directly with no inset: the slide stays full width edge-to-edge, and the
+  // radius just carves the very corners, revealing the page background
+  // behind them — same as a full-bleed rounded-top sheet.
   const radius = s.borderRadius ?? 0;
-  const inset = radius > 0 ? 14 : 0;
 
   const runFade = () => {
     Animated.sequence([
@@ -1043,7 +1040,7 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
   if (variant === "fade") {
     const slide = slides[page];
     return (
-      <View style={{ height, paddingHorizontal: inset, paddingVertical: inset ? inset / 2 : 0 }}>
+      <View style={{ height }}>
         <Animated.View style={{ flex: 1, opacity: fadeAnim, borderRadius: radius, overflow: "hidden" }}>
           {slide.image
             ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -1112,8 +1109,7 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
           onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / (screenW || 1)))}
         >
           {slides.map((slide, i) => (
-            <View key={i} style={{ width: screenW, height, paddingHorizontal: inset, paddingVertical: inset ? inset / 2 : 0 }}>
-              <View style={{ flex: 1, borderRadius: radius, overflow: "hidden" }}>
+            <View key={i} style={{ width: screenW, height, borderRadius: radius, overflow: "hidden" }}>
               {slide.image
                 ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
                 : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
@@ -1132,7 +1128,6 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
                   </View>
                 </>
               )}
-              </View>
             </View>
           ))}
         </ScrollView>
