@@ -63,11 +63,23 @@ export function ChipRow<T extends string>({
   value,
   onChange,
   colors,
+  clearable = false,
 }: {
   options: { value: T; label: string }[];
   value: T | undefined;
   onChange: (v: T | undefined) => void;
   colors: ColorScheme;
+  /**
+   * Whether tapping the already-active chip clears it back to undefined.
+   * Default false: nearly every call site resolves its value with
+   * `value={x ?? "default"}`, so clearing to undefined was invisible — the
+   * fallback just re-displayed the same chip as active — meaning a re-tap
+   * silently no-op'd instead of landing the change, which read as "I need to
+   * tap this multiple times." Pass true for genuinely optional fields with NO
+   * fallback default (e.g. Text alignment, where unset means "inherit") —
+   * those need this to reach the unset state at all.
+   */
+  clearable?: boolean;
 }) {
   return (
     <View style={ef.chipRow}>
@@ -76,7 +88,7 @@ export function ChipRow<T extends string>({
         return (
           <TouchableOpacity
             key={o.value}
-            onPress={() => onChange(active ? undefined : o.value)}
+            onPress={() => { if (!active) onChange(o.value); else if (clearable) onChange(undefined); }}
             style={[ef.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary + "18" : "transparent" }]}
           >
             <Text style={{ fontSize: 12, color: colors.foreground, fontWeight: active ? "600" : "400" }}>{o.label}</Text>

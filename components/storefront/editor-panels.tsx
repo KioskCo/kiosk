@@ -283,6 +283,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={navbar.logoMode ?? "text"}
               onChange={(v) => updateNavbar({ logoMode: v as NavbarLogoMode })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           <Field label="Logo position" colors={colors}>
@@ -295,6 +296,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={navbar.layout ?? "logo-left"}
               onChange={(v) => updateNavbar({ layout: v as NavbarLayout })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           <Field label="Menu style" colors={colors}>
@@ -309,6 +311,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={navbar.navbarStyle ?? "default"}
               onChange={(v) => updateNavbar({ navbarStyle: v as NavbarStyle })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           {(navbar.navbarStyle === "filled" || navbar.navbarStyle === "bordered") && (
@@ -322,12 +325,13 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
             </Field>
           )}
           {(navbar.logoMode === "logo" || navbar.logoMode === "both") && navbar.logoImage ? (
-            <Field label={`Logo height: ${navbar.logoHeight ?? 28}px`} colors={colors}>
+            <Field label={`Logo height: ${navbar.logoHeight ?? 40}px`} colors={colors}>
               <ChipRow
-                options={[16, 24, 32, 48, 64].map((n) => ({ value: String(n), label: `${n}px` }))}
-                value={String(navbar.logoHeight ?? 28)}
+                options={[24, 32, 40, 56, 72, 96].map((n) => ({ value: String(n), label: `${n}px` }))}
+                value={String(navbar.logoHeight ?? 40)}
                 onChange={(v) => updateNavbar({ logoHeight: Number(v) })}
                 colors={colors}
+                clearable={false}
               />
             </Field>
           ) : null}
@@ -348,6 +352,10 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
                     <Feather name="trash-2" size={16} color={colors.destructive} />
                   </TouchableOpacity>
                 </View>
+                <View style={{ gap: 4 }}>
+                  <Text style={{ fontSize: 11, color: colors.mutedForeground }}>Icon (optional — shown before the label, and in the mobile sidebar)</Text>
+                  <NavLinkIconPicker value={l.icon} onChange={(v) => updateLink({ icon: v })} colors={colors} />
+                </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <SwitchRow label="Show as button" value={l.isButton ?? false} onValueChange={(v) => updateLink({ isButton: v })} colors={colors} />
                 </View>
@@ -358,6 +366,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
                       value={l.btnStyle ?? "solid"}
                       onChange={(v) => updateLink({ btnStyle: v as any })}
                       colors={colors}
+                      clearable={false}
                     />
                     <View style={{ flexDirection: "row", gap: 6 }}>
                       <View style={{ flex: 1 }}>
@@ -396,6 +405,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
                   value={navbar.searchStyle ?? "dropdown"}
                   onChange={(v) => updateNavbar({ searchStyle: v as any })}
                   colors={colors}
+                  clearable={false}
                 />
               </Field>
             </>
@@ -440,6 +450,22 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={navbar.sidebarAnimation ?? "slide"}
               onChange={(v) => updateNavbar({ sidebarAnimation: v as any })}
               colors={colors}
+              clearable={false}
+            />
+          </Field>
+          <Field label="Sidebar look" colors={colors}>
+            <ChipRow
+              options={[
+                { value: "solid", label: "Solid" },
+                { value: "glass", label: "Glass" },
+                { value: "dark", label: "Dark" },
+                { value: "minimal", label: "Minimal" },
+                { value: "accent", label: "Accent" },
+              ]}
+              value={navbar.sidebarTheme ?? "solid"}
+              onChange={(v) => updateNavbar({ sidebarTheme: v as any })}
+              colors={colors}
+              clearable={false}
             />
           </Field>
           <Field label="Sidebar link style" colors={colors}>
@@ -454,6 +480,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={navbar.listStyle ?? "chevron"}
               onChange={(v) => updateNavbar({ listStyle: v as any })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           <Field label="Mobile menu panel" colors={colors}>
@@ -467,6 +494,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={navbar.mobileMenuStyle ?? "left"}
               onChange={(v) => updateNavbar({ mobileMenuStyle: v as any })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           <Field label="Cart panel" colors={colors}>
@@ -480,6 +508,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={navbar.cartDrawerStyle ?? "right"}
               onChange={(v) => updateNavbar({ cartDrawerStyle: v as any })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14, marginBottom: 4 }}>
@@ -517,6 +546,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
                   value={btn.style}
                   onChange={(v) => updateNavbar({ ctaButtons: (navbar.ctaButtons ?? []).map((b, j) => j === i ? { ...b, style: v as any } : b) })}
                   colors={colors}
+                  clearable={false}
                 />
               </Field>
               <Field label="Background colour (leave blank for accent)" colors={colors}>
@@ -531,6 +561,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
                   value={btn.navPosition ?? "right"}
                   onChange={(v) => updateNavbar({ ctaButtons: (navbar.ctaButtons ?? []).map((b, j) => j === i ? { ...b, navPosition: v as any } : b) })}
                   colors={colors}
+                  clearable={false}
                 />
               </Field>
               <SwitchRow
@@ -555,6 +586,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={footer.logoMode ?? "text"}
               onChange={(v) => updateFooter({ logoMode: v as any })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           {(footer.logoMode === "logo" || footer.logoMode === "both") && (
@@ -565,10 +597,11 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
           {(footer.logoMode === "logo" || footer.logoMode === "both") && (
             <Field label="Logo height (px)" colors={colors}>
               <ChipRow
-                options={[{ value: "24", label: "24" }, { value: "32", label: "32" }, { value: "40", label: "40" }, { value: "48", label: "48" }]}
-                value={String(footer.logoHeight ?? 32)}
+                options={[{ value: "24", label: "24" }, { value: "32", label: "32" }, { value: "40", label: "40" }, { value: "56", label: "56" }, { value: "72", label: "72" }]}
+                value={String(footer.logoHeight ?? 40)}
                 onChange={(v) => updateFooter({ logoHeight: Number(v) })}
                 colors={colors}
+                clearable={false}
               />
             </Field>
           )}
@@ -585,6 +618,7 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
               value={footer.textAlign ?? "left"}
               onChange={(v) => updateFooter({ textAlign: v as any })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           <SwitchRow label="Show social links" value={footer.showSocial} onValueChange={(v) => updateFooter({ showSocial: v })} colors={colors} />
@@ -763,6 +797,7 @@ export function ThemePanelFull({ colors }: { colors: ColorScheme }) {
           value={dt.headingCase ?? "normal"}
           onChange={(v) => updateDesignTokens({ headingCase: v as DesignTokens["headingCase"] })}
           colors={colors}
+          clearable={false}
         />
       </Field>
 
@@ -956,6 +991,7 @@ export function PaymentsPanelFull({ colors }: { colors: ColorScheme }) {
             value={paymentConfig.currency ?? "USD"}
             onChange={(v) => updatePaymentConfig({ currency: v })}
             colors={colors}
+            clearable={false}
           />
         </Field>
       )}
@@ -1230,6 +1266,40 @@ function countBlocks(blocks: CustomBlock[]): number {
   return n;
 }
 
+// Curated icon set for individual nav links / pages — names must match shop's
+// NAV_LINK_ICONS map (site-header.tsx) so every icon a merchant picks here actually
+// renders on the deployed shop, in both the top nav and the mobile sidebar.
+const NAV_LINK_ICON_SET = [
+  "home-outline", "information-circle-outline", "storefront-outline", "mail-outline",
+  "call-outline", "heart-outline", "star-outline", "gift-outline", "help-circle-outline",
+  "pricetag-outline", "book-outline", "images-outline", "calendar-outline",
+  "location-outline", "chatbubble-outline", "log-in-outline", "person-outline",
+  "cart-outline", "cube-outline",
+];
+function NavLinkIconPicker({ value, onChange, colors }: { value?: string; onChange: (v: string | undefined) => void; colors: ColorScheme }) {
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+      <TouchableOpacity
+        onPress={() => onChange(undefined)}
+        style={{ paddingHorizontal: 10, height: 36, borderRadius: 8, borderWidth: 1.5, alignItems: "center", justifyContent: "center", borderColor: !value ? colors.primary : colors.border, backgroundColor: !value ? colors.primary + "15" : colors.card }}
+      >
+        <Text style={{ fontSize: 12, color: !value ? colors.primary : colors.mutedForeground, fontWeight: !value ? "600" : "400" }}>None</Text>
+      </TouchableOpacity>
+      {NAV_LINK_ICON_SET.map((icon) => {
+        const active = value === icon;
+        return (
+          <TouchableOpacity
+            key={icon}
+            onPress={() => onChange(icon)}
+            style={{ width: 36, height: 36, borderRadius: 8, borderWidth: 1.5, alignItems: "center", justifyContent: "center", borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary + "15" : colors.card }}
+          >
+            <Ionicons name={icon as any} size={17} color={active ? colors.primary : colors.mutedForeground} />
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
 function NavIconPicker({ icons, value, onChange, colors }: { icons: string[]; value: string; onChange: (v: string) => void; colors: ColorScheme }) {
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>

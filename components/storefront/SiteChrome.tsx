@@ -1,4 +1,5 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import React, { useEffect, useRef } from "react";
 import {
@@ -65,11 +66,29 @@ export function StoreSidebar({
   accentColor?: string;
 }) {
   const dark = theme !== "light";
-  const bg = dark ? "#111111" : "#ffffff";
-  const fg = dark ? "#ffffff" : "#111111";
-  const muted = dark ? "#888888" : "#666666";
-  const border = dark ? "#222222" : "#f0f0f0";
   const accent = accentColor;
+
+  // Sidebar "look" — a visual treatment independent of which edge the panel opens from.
+  // "dark"/"accent" force their own palette regardless of the store's light/dark theme;
+  // "glass" renders a real frosted-blur panel (via expo-blur) instead of a solid fill.
+  const sidebarTheme = config.sidebarTheme ?? "solid";
+  const bg =
+    sidebarTheme === "dark" ? "#111111" :
+    sidebarTheme === "accent" ? accent :
+    sidebarTheme === "glass" ? "transparent" :
+    dark ? "#111111" : "#ffffff";
+  const fg =
+    sidebarTheme === "dark" || sidebarTheme === "accent" ? "#ffffff" :
+    dark ? "#ffffff" : "#111111";
+  const muted =
+    sidebarTheme === "dark" ? "#999999" :
+    sidebarTheme === "accent" ? "rgba(255,255,255,0.75)" :
+    dark ? "#888888" : "#666666";
+  const border =
+    sidebarTheme === "minimal" ? "transparent" :
+    sidebarTheme === "dark" ? "#262626" :
+    sidebarTheme === "accent" ? "rgba(255,255,255,0.18)" :
+    dark ? "#222222" : "#f0f0f0";
 
   const animation = config.sidebarAnimation ?? "slide";
   const listStyle = config.listStyle ?? "chevron";
@@ -159,6 +178,9 @@ export function StoreSidebar({
           animation === "fade" ? { opacity: overlayOpacity } : undefined,
         ]}
       >
+        {sidebarTheme === "glass" && (
+          <BlurView intensity={55} tint={dark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+        )}
         <View style={sidebarStyles.header}>
           <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
             <Ionicons name="close" size={22} color={muted} />
@@ -193,7 +215,11 @@ export function StoreSidebar({
               onPress={() => { onPagePress?.(link.href); onClose(); }}
               style={[sidebarStyles.item, { borderBottomColor: border }]}
             >
-              {getPrefix(i)}
+              {link.icon ? (
+                <Ionicons name={link.icon as any} size={16} color={muted} style={{ marginRight: 10 }} />
+              ) : (
+                getPrefix(i)
+              )}
               <Text style={[sidebarStyles.itemText, { color: fg }]}>{link.label}</Text>
               {listStyle === "chevron" && (
                 <Ionicons name="chevron-forward" size={16} color={muted} style={{ marginLeft: "auto" }} />
@@ -346,7 +372,7 @@ export function StoreNavbar({
   const { width: screenWidth } = useWindowDimensions();
   const isDesktop = screenWidth >= 768;
 
-  const logoH = config.logoHeight ?? 34;
+  const logoH = config.logoHeight ?? 40;
   const showLogo = (config.logoMode === "logo" || config.logoMode === "both") && !!config.logoImage;
   const showBrand = config.logoMode === "text" || config.logoMode === "both" || !config.logoMode;
 
@@ -535,7 +561,7 @@ export function StoreFooter({
         <View style={{ alignItems }}>
           {/* Brand — logo and/or text tightly grouped */}
           {(() => {
-            const fLogoH = config.logoHeight ?? 32;
+            const fLogoH = config.logoHeight ?? 40;
             const fShowLogo = (config.logoMode === "logo" || config.logoMode === "both") && !!config.logoImage;
             const fShowText = config.logoMode === "text" || config.logoMode === "both" || !config.logoMode;
             return (

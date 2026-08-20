@@ -222,7 +222,10 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(STOREFRONT_STORAGE_KEY, JSON.stringify(stateRef.current)).catch(() => {});
   }, [state, hydrated]);
 
-  // Silent DB sync: when the active template is launched, push JSON 2 s after last change
+  // Silent DB sync: when the active template is launched, push JSON ~1s after last change.
+  // Kept short but still debounced (not per-keystroke) so a burst of edits — e.g. dragging a
+  // slider or typing in a text field — coalesces into one request instead of flooding the
+  // PM2/ngrok origin with concurrent writes.
   const lastSyncedJsonRef = useRef<string>("");
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -235,7 +238,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
     syncTimerRef.current = setTimeout(() => {
       lastSyncedJsonRef.current = json;
       templatesApi.update(activeTpl.serverId ?? activeTpl.id, { settings: { templateJson: json } }).catch(() => {});
-    }, 2000);
+    }, 1000);
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };

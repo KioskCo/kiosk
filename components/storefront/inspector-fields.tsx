@@ -475,7 +475,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="Subheading" colors={colors}><TextField value={s.subheading ?? ""} onChangeText={(t) => on({ subheading: t })} colors={colors} /></Field>
           {variants.length > 0 && (
             <Field label="Variant" colors={colors}>
-              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} />
+              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} clearable />
             </Field>
           )}
           <Field label="Columns" colors={colors}>
@@ -1067,7 +1067,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="Subheading" colors={colors}><TextField value={s.subheading ?? ""} onChangeText={(t) => on({ subheading: t || undefined })} colors={colors} /></Field>
           {variants.length > 0 && (
             <Field label="Variant" colors={colors}>
-              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} />
+              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} clearable />
             </Field>
           )}
           {s.plans.map((plan, i) => (
@@ -1100,7 +1100,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="CTA label" colors={colors}><TextField value={s.ctaLabel ?? ""} onChangeText={(t) => on({ ctaLabel: t || undefined })} colors={colors} /></Field>
           <Field label="CTA link" colors={colors}><LinkField value={s.ctaLink} onChange={(v) => on({ ctaLink: v })} colors={colors} /></Field>
           <Field label="Variant" colors={colors}>
-            <ChipRow options={[{ value: "banner", label: "Banner" }, { value: "box", label: "Box" }]} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} />
+            <ChipRow options={[{ value: "banner", label: "Banner" }, { value: "box", label: "Box" }]} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} clearable />
           </Field>
         </>
       );
@@ -1111,7 +1111,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="Heading" colors={colors}><TextField value={s.heading ?? ""} onChangeText={(t) => on({ heading: t || undefined })} colors={colors} /></Field>
           {variants.length > 0 && (
             <Field label="Variant" colors={colors}>
-              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} />
+              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} clearable />
             </Field>
           )}
           {s.items.map((item, i) => (
@@ -1134,7 +1134,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="Subheading" colors={colors}><TextField value={s.subheading ?? ""} onChangeText={(t) => on({ subheading: t || undefined })} colors={colors} /></Field>
           {variants.length > 0 && (
             <Field label="Variant" colors={colors}>
-              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} />
+              <ChipRow options={variants.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} value={s.variant as any} onChange={(v) => on({ variant: v })} colors={colors} clearable />
             </Field>
           )}
           {s.members.map((m, i) => (

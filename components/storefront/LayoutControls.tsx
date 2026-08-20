@@ -150,6 +150,7 @@ function SectionLayoutControls({
             value={section.variant}
             onChange={(v) => onChange({ variant: v })}
             colors={colors}
+            clearable
           />
         </Field>
       ) : null}
@@ -167,6 +168,7 @@ function SectionLayoutControls({
               value={section.padding ?? "md"}
               onChange={(v) => onChange({ padding: v })}
               colors={colors}
+              clearable={false}
             />
           </Field>
           <Field label="Background preset" colors={colors}>
@@ -179,6 +181,7 @@ function SectionLayoutControls({
               value={section.background ?? "default"}
               onChange={(v) => onChange({ background: v === "default" ? undefined : (v as "muted" | "primary") })}
               colors={colors}
+              clearable={false}
             />
           </Field>
         </>
@@ -195,6 +198,7 @@ function SectionLayoutControls({
           value={section.fontSize ?? "md"}
           onChange={(v) => onChange({ fontSize: v === "md" ? undefined : v })}
           colors={colors}
+          clearable={false}
         />
       </Field>
 
@@ -220,6 +224,7 @@ function SectionLayoutControls({
           value={section.textAlign}
           onChange={(v) => onChange({ textAlign: v })}
           colors={colors}
+          clearable
         />
       </Field>
 
@@ -254,6 +259,7 @@ function SectionLayoutControls({
           value={section.borderRadius != null ? String(section.borderRadius) : "0"}
           onChange={(v) => onChange({ borderRadius: v ? Number(v) : undefined })}
           colors={colors}
+          clearable={false}
         />
       </Field>
 
@@ -263,6 +269,7 @@ function SectionLayoutControls({
           value={section.shadow ?? "none"}
           onChange={(v) => onChange({ shadow: v === "none" ? undefined : (v as Section["shadow"]) })}
           colors={colors}
+          clearable={false}
         />
       </Field>
 
@@ -300,6 +307,7 @@ function SectionLayoutControls({
           value={section.animation ?? "none"}
           onChange={(v) => onChange({ animation: v === "none" ? undefined : (v as any) })}
           colors={colors}
+          clearable={false}
         />
         <Text style={{ fontSize: 11, color: colors.mutedForeground, marginTop: 6 }}>
           Reveals on scroll-down · resets when you scroll back up
@@ -401,6 +409,7 @@ function ElementStyleControls({
               value={s.borderRadius != null ? String(s.borderRadius) : undefined}
               onChange={(v) => onPatch({ borderRadius: v ? Number(v) : 0 })}
               colors={colors}
+              clearable
             />
           </Field>
           <ColorField label="Border color" value={String(s.borderColor ?? "")} onChange={(v) => onPatch({ borderColor: v ?? "" })} colors={colors} />
@@ -447,6 +456,7 @@ function ElementStyleControls({
               value={s.borderRadius != null ? String(s.borderRadius) : undefined}
               onChange={(v) => onPatch({ borderRadius: v ? Number(v) : 0 })}
               colors={colors}
+              clearable
             />
           </Field>
           <ColorField label="Border color" value={String(s.borderColor ?? "")} onChange={(v) => onPatch({ borderColor: v ?? "" })} colors={colors} />
@@ -467,6 +477,7 @@ function ElementStyleControls({
               value={String(s.fontWeight ?? "")}
               onChange={(v) => onPatch({ fontWeight: v ?? "" })}
               colors={colors}
+              clearable
             />
           </Field>
         </>

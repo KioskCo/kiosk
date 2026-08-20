@@ -925,6 +925,8 @@ export type NavLink = {
 export type NavbarLogoMode = "text" | "logo" | "both";
 export type SidebarAnimation = "slide" | "fade" | "spring" | "bounce" | "none";
 export type SidebarListStyle = "plain" | "chevron" | "arrow" | "dot" | "numbered";
+/** Visual treatment of the mobile menu (sidebar) panel itself — independent of which edge it opens from. */
+export type SidebarTheme = "solid" | "glass" | "dark" | "minimal" | "accent";
 export type NavbarLayout = "logo-left" | "logo-center" | "logo-right";
 export type NavbarStyle = "default" | "transparent" | "filled" | "minimal" | "bordered";
 export type NavbarSearchStyle = "dropdown" | "expand" | "slide" | "overlay" | "drawer" | "bar-top";
@@ -944,6 +946,8 @@ export type NavbarConfig = {
   sticky: boolean;
   sidebarAnimation?: SidebarAnimation;
   listStyle?: SidebarListStyle;
+  /** Visual style of the mobile sidebar panel — solid / glass / dark / minimal / accent (default "solid") */
+  sidebarTheme?: SidebarTheme;
   /** Overall navbar layout â€” controls logo position */
   layout?: NavbarLayout;
   /** Show live cart item count badge on the cart icon */
@@ -1023,7 +1027,7 @@ export type FooterConfig = {
 export const defaultNavbar: NavbarConfig = {
   brand: "ATELIER",
   logoMode: "text",
-  logoHeight: 28,
+  logoHeight: 40,
   links: [
     { label: "Home", href: "/" },
     { label: "Shop", href: "/shop" },

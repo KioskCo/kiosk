@@ -309,6 +309,7 @@ export function CustomSectionEditor({ section, onChange, colors }: Props) {
           value={section.direction}
           onChange={(v) => onChange({ direction: v ?? "column" })}
           colors={colors}
+          clearable
         />
       </Field>
       <View style={{ flexDirection: "row", gap: 12 }}>
@@ -319,6 +320,7 @@ export function CustomSectionEditor({ section, onChange, colors }: Props) {
               value={section.paddingX}
               onChange={(v) => onChange({ paddingX: v ?? "md" })}
               colors={colors}
+              clearable
             />
           </Field>
         </View>
@@ -329,6 +331,7 @@ export function CustomSectionEditor({ section, onChange, colors }: Props) {
               value={section.paddingY}
               onChange={(v) => onChange({ paddingY: v ?? "md" })}
               colors={colors}
+              clearable
             />
           </Field>
         </View>
@@ -630,6 +633,7 @@ function BlockContentEditor({ block, onChange, colors }: { block: CustomBlock; o
               value={b.styles?.textAlign}
               onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), textAlign: v } })}
               colors={colors}
+              clearable
             />
           </Field>
           <ColorField label="Text color" value={b.styles?.color} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), color: v } })} colors={colors} />
@@ -651,6 +655,7 @@ function BlockContentEditor({ block, onChange, colors }: { block: CustomBlock; o
               value={b.iconPos}
               onChange={(v) => onChange({ iconPos: v ?? "left" })}
               colors={colors}
+              clearable
             />
           </Field>
           <SwitchRow label="Full width" value={(b.styles?.width ?? "") === "100%"} onValueChange={(v) => onChange({ styles: { ...(b.styles ?? {}), width: v ? "100%" : undefined } })} colors={colors} />
@@ -1270,6 +1275,7 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
               value={st.fontWeight}
               onChange={(v) => setStyle({ fontWeight: v })}
               colors={colors}
+              clearable
             />
           </Field>
           <Field label="Text alignment" colors={colors}>
@@ -1278,6 +1284,7 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
               value={st.textAlign}
               onChange={(v) => setStyle({ textAlign: v })}
               colors={colors}
+              clearable
             />
           </Field>
         </>
@@ -1312,6 +1319,7 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
           value={st.alignSelf}
           onChange={(v) => setStyle({ alignSelf: v })}
           colors={colors}
+          clearable
         />
       </Field>
       <Text style={[{ fontSize: 11, fontWeight: "600", marginTop: 8, marginBottom: 2 }, { color: colors.mutedForeground }]}>Space around this block</Text>
