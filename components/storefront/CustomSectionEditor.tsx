@@ -21,6 +21,8 @@ import {
   LinkField,
   PxStepper,
   ProductSelect,
+  RadiusSlider,
+  SliderControl,
   SwitchRow,
   TextField,
   type ColorScheme,
@@ -685,10 +687,10 @@ function BlockContentEditor({ block, onChange, colors }: { block: CustomBlock; o
             <TextField value={b.alt ?? ""} onChangeText={(t) => onChange({ alt: t })} colors={colors} />
           </Field>
           <Field label="Rounded corners" colors={colors}>
-            <PxStepper label="Radius" value={unPx(b.styles?.borderRadius)} max={48} step={4} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), borderRadius: pxOf(v) } })} colors={colors} />
+            <RadiusSlider value={unPx(b.styles?.borderRadius)} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), borderRadius: pxOf(v) } })} colors={colors} />
           </Field>
           <Field label="Height" colors={colors}>
-            <PxStepper label="Height" value={unPx(b.styles?.height)} max={600} step={8} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), height: pxOf(v) } })} colors={colors} />
+            <SliderControl label="Height" value={unPx(b.styles?.height) ?? 0} min={0} max={600} step={4} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), height: pxOf(v) } })} colors={colors} />
           </Field>
         </>
       );
@@ -696,7 +698,7 @@ function BlockContentEditor({ block, onChange, colors }: { block: CustomBlock; o
     case "spacer":
       return (
         <Field label="Height" colors={colors}>
-          <PxStepper label="Height" value={b.height} max={160} step={8} onChange={(v) => onChange({ height: v ?? 32 })} colors={colors} />
+          <SliderControl label="Height" value={b.height ?? 32} min={0} max={160} step={4} onChange={(v) => onChange({ height: v })} colors={colors} />
         </Field>
       );
 
@@ -854,10 +856,10 @@ function BlockContentEditor({ block, onChange, colors }: { block: CustomBlock; o
             />
           </Field>
           <Field label="Height" colors={colors}>
-            <PxStepper label="Player height" value={unPx(b.styles?.height)} max={600} step={8} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), height: pxOf(v) } })} colors={colors} />
+            <SliderControl label="Player height" value={unPx(b.styles?.height) ?? 0} min={0} max={600} step={4} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), height: pxOf(v) } })} colors={colors} />
           </Field>
           <Field label="Corner radius" colors={colors}>
-            <PxStepper label="Radius" value={unPx(b.styles?.borderRadius)} max={48} step={4} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), borderRadius: pxOf(v) } })} colors={colors} />
+            <RadiusSlider value={unPx(b.styles?.borderRadius)} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), borderRadius: pxOf(v) } })} colors={colors} />
           </Field>
           <ColorField label="Player background" value={b.styles?.backgroundColor} onChange={(v) => onChange({ styles: { ...(b.styles ?? {}), backgroundColor: v } })} colors={colors} />
           <Field label="Caption" colors={colors}>
@@ -1290,11 +1292,11 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
         </>
       )}
       <Field label="Padding" colors={colors}>
-        <PxStepper label="Padding" value={unPx(st.padding)} max={80} step={4} onChange={(v) => setStyle({ padding: pxOf(v) })} colors={colors} />
+        <SliderControl label="Padding" value={unPx(st.padding) ?? 0} min={0} max={80} step={2} onChange={(v) => setStyle({ padding: pxOf(v) })} colors={colors} />
       </Field>
       {showHeight && (
         <Field label="Min height" colors={colors}>
-          <PxStepper label="Min height" value={unPx(st.minHeight)} max={800} step={20} onChange={(v) => setStyle({ minHeight: pxOf(v) })} colors={colors} />
+          <SliderControl label="Min height" value={unPx(st.minHeight) ?? 0} min={0} max={800} step={10} onChange={(v) => setStyle({ minHeight: pxOf(v) })} colors={colors} />
         </Field>
       )}
       {!HAS_OWN_WIDTH.has(block.type) && (
@@ -1308,10 +1310,10 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
         </Field>
       )}
       <Field label="Corner radius" colors={colors}>
-        <PxStepper label="Radius" value={unPx(st.borderRadius)} max={48} step={4} onChange={(v) => setStyle({ borderRadius: pxOf(v) })} colors={colors} />
+        <RadiusSlider value={unPx(st.borderRadius)} onChange={(v) => setStyle({ borderRadius: pxOf(v) })} colors={colors} />
       </Field>
       <Field label="Max width" colors={colors}>
-        <PxStepper label="Max width" value={unPx(st.maxWidth)} max={1200} step={20} onChange={(v) => setStyle({ maxWidth: pxOf(v) })} colors={colors} />
+        <SliderControl label="Max width" value={unPx(st.maxWidth) ?? 0} min={0} max={1200} step={10} onChange={(v) => setStyle({ maxWidth: pxOf(v) })} colors={colors} />
       </Field>
       <Field label="Alignment inside section" colors={colors}>
         <ChipRow<"start" | "center" | "end" | "stretch">
@@ -1323,10 +1325,12 @@ function BlockStylePanel({ block, onChange, colors }: { block: CustomBlock; onCh
         />
       </Field>
       <Text style={[{ fontSize: 11, fontWeight: "600", marginTop: 8, marginBottom: 2 }, { color: colors.mutedForeground }]}>Space around this block</Text>
-      <PxStepper label="Space above" value={unPx(st.marginTop)} max={200} step={8} onChange={(v) => setStyle({ marginTop: pxOf(v) })} onClear={() => setStyle({ marginTop: undefined })} colors={colors} />
-      <PxStepper label="Space below" value={unPx(st.marginBottom)} max={200} step={8} onChange={(v) => setStyle({ marginBottom: pxOf(v) })} onClear={() => setStyle({ marginBottom: undefined })} colors={colors} />
+      <View style={{ gap: 10 }}>
+        <SliderControl label="Space above" value={unPx(st.marginTop) ?? 0} min={0} max={200} step={4} onChange={(v) => setStyle({ marginTop: v ? pxOf(v) : undefined })} colors={colors} />
+        <SliderControl label="Space below" value={unPx(st.marginBottom) ?? 0} min={0} max={200} step={4} onChange={(v) => setStyle({ marginBottom: v ? pxOf(v) : undefined })} colors={colors} />
+      </View>
       <Field label="Opacity" colors={colors}>
-        <PxStepper label="Opacity %" value={st.opacity != null ? num(st.opacity) * 100 : undefined} max={100} step={5} onChange={(v) => setStyle({ opacity: v != null ? v / 100 : undefined })} colors={colors} />
+        <SliderControl label="Opacity" value={st.opacity != null ? Math.round(num(st.opacity) * 100) : 100} min={0} max={100} step={5} unit="%" onChange={(v) => setStyle({ opacity: v / 100 })} colors={colors} />
       </Field>
       {Object.keys(st).length > 0 && (
         <TouchableOpacity onPress={clear} style={{ alignSelf: "flex-start", marginTop: 4 }}>

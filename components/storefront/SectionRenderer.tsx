@@ -982,6 +982,14 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
   };
   const height = heightFor(variant);
   const cardW = screenW * 0.78;
+  // Rounds each slide's image/card — never the section itself. Full-bleed
+  // variants (banner/fullwidth/thumbnail's main slide, fade) are edge-to-edge
+  // by default, where rounded corners would just be clipped by the screen
+  // edge and invisible — so rounding those insets the image slightly (an
+  // explicit choice, only once a radius is actually set) rather than silently
+  // doing nothing. Cards/thumbnails are never edge-to-edge, so they round in place.
+  const radius = s.borderRadius ?? 0;
+  const inset = radius > 0 ? 14 : 0;
 
   const runFade = () => {
     Animated.sequence([
@@ -1035,8 +1043,8 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
   if (variant === "fade") {
     const slide = slides[page];
     return (
-      <View style={{ height, overflow: "hidden" }}>
-        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+      <View style={{ height, paddingHorizontal: inset, paddingVertical: inset ? inset / 2 : 0 }}>
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, borderRadius: radius, overflow: "hidden" }}>
           {slide.image
             ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
             : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
@@ -1072,7 +1080,7 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
               key={i}
               activeOpacity={slide.ctaLink ? 0.85 : 1}
               onPress={() => slide.ctaLink && onLinkPress?.(slide.ctaLink)}
-              style={{ width: cardW, height, borderRadius: 16, overflow: "hidden" }}
+              style={{ width: cardW, height, borderRadius: s.borderRadius ?? 16, overflow: "hidden" }}
             >
               {slide.image
                 ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -1095,7 +1103,7 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
   const isBanner = variant === "banner";
   return (
     <View>
-      <View style={{ height, position: "relative", overflow: "hidden" }}>
+      <View style={{ height, position: "relative" }}>
         <ScrollView
           ref={scrollRef}
           horizontal
@@ -1104,7 +1112,8 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
           onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / (screenW || 1)))}
         >
           {slides.map((slide, i) => (
-            <View key={i} style={{ width: screenW, height, overflow: "hidden" }}>
+            <View key={i} style={{ width: screenW, height, paddingHorizontal: inset, paddingVertical: inset ? inset / 2 : 0 }}>
+              <View style={{ flex: 1, borderRadius: radius, overflow: "hidden" }}>
               {slide.image
                 ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
                 : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}
@@ -1123,6 +1132,7 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
                   </View>
                 </>
               )}
+              </View>
             </View>
           ))}
         </ScrollView>
@@ -1132,7 +1142,7 @@ function CarouselSectionBlock({ s, colors, onLinkPress }: {
       {variant === "thumbnail" && slides.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 10, gap: 8 }}>
           {slides.map((slide, i) => (
-            <TouchableOpacity key={i} onPress={() => goTo(i)} style={{ width: 56, height: 56, borderRadius: 8, overflow: "hidden", borderWidth: 2, borderColor: i === page ? (colors.accent ?? "#111") : "transparent" }}>
+            <TouchableOpacity key={i} onPress={() => goTo(i)} style={{ width: 56, height: 56, borderRadius: s.borderRadius ?? 8, overflow: "hidden", borderWidth: 2, borderColor: i === page ? (colors.accent ?? "#111") : "transparent" }}>
               {slide.image
                 ? <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
                 : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#3a3a3a" }]} />}

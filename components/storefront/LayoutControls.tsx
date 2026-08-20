@@ -6,7 +6,6 @@ import { SECTION_VARIANTS, type FontHeading, type Padding, type Section } from "
 import {
   DEFAULT_ELEMENT_TARGETS,
   GRADIENT_PRESETS,
-  RADIUS_PRESETS,
   SECTION_ELEMENT_TARGETS,
   SHADOW_PRESETS,
   SELF_PADDED_TYPES,
@@ -20,6 +19,8 @@ import {
   FONT_OPTIONS,
   ImageField,
   PxStepper,
+  RadiusSlider,
+  SliderControl,
   SwitchRow,
   TextField,
   type ColorScheme,
@@ -203,16 +204,20 @@ function SectionLayoutControls({
       </Field>
 
       <Text style={[lc.sub, { color: colors.mutedForeground }]}>Fine-tune spacing inside</Text>
-      <PxStepper label="Top" value={section.paddingTopPx} onChange={(v) => onChange({ paddingTopPx: v || undefined })} onClear={() => onChange({ paddingTopPx: undefined })} colors={colors} />
-      <PxStepper label="Bottom" value={section.paddingBottomPx} onChange={(v) => onChange({ paddingBottomPx: v || undefined })} onClear={() => onChange({ paddingBottomPx: undefined })} colors={colors} />
-      <PxStepper label="Left" value={section.paddingLeftPx} onChange={(v) => onChange({ paddingLeftPx: v || undefined })} onClear={() => onChange({ paddingLeftPx: undefined })} colors={colors} />
-      <PxStepper label="Right" value={section.paddingRightPx} onChange={(v) => onChange({ paddingRightPx: v || undefined })} onClear={() => onChange({ paddingRightPx: undefined })} colors={colors} />
+      <View style={{ gap: 10 }}>
+        <SliderControl label="Top" value={section.paddingTopPx ?? 0} max={160} onChange={(v) => onChange({ paddingTopPx: v || undefined })} colors={colors} />
+        <SliderControl label="Bottom" value={section.paddingBottomPx ?? 0} max={160} onChange={(v) => onChange({ paddingBottomPx: v || undefined })} colors={colors} />
+        <SliderControl label="Left" value={section.paddingLeftPx ?? 0} max={160} onChange={(v) => onChange({ paddingLeftPx: v || undefined })} colors={colors} />
+        <SliderControl label="Right" value={section.paddingRightPx ?? 0} max={160} onChange={(v) => onChange({ paddingRightPx: v || undefined })} colors={colors} />
+      </View>
 
       <Text style={[lc.sub, { color: colors.mutedForeground }]}>Gap around block</Text>
-      <PxStepper label="Top" value={section.marginTopPx} onChange={(v) => onChange({ marginTopPx: v || undefined })} onClear={() => onChange({ marginTopPx: undefined })} colors={colors} />
-      <PxStepper label="Bottom" value={section.marginBottomPx} onChange={(v) => onChange({ marginBottomPx: v || undefined })} onClear={() => onChange({ marginBottomPx: undefined })} colors={colors} />
+      <View style={{ gap: 10 }}>
+        <SliderControl label="Top" value={section.marginTopPx ?? 0} max={160} onChange={(v) => onChange({ marginTopPx: v || undefined })} colors={colors} />
+        <SliderControl label="Bottom" value={section.marginBottomPx ?? 0} max={160} onChange={(v) => onChange({ marginBottomPx: v || undefined })} colors={colors} />
+      </View>
 
-      <PxStepper label="Block height" value={section.minHeight} max={800} step={20} onChange={(v) => onChange({ minHeight: v || undefined })} onClear={() => onChange({ minHeight: undefined })} colors={colors} />
+      <SliderControl label="Block height" value={section.minHeight ?? 0} min={0} max={800} step={10} onChange={(v) => onChange({ minHeight: v || undefined })} colors={colors} />
 
       <Field label="Text alignment" colors={colors}>
         <ChipRow
@@ -254,13 +259,7 @@ function SectionLayoutControls({
       ) : null}
 
       <Field label="Rounded corners" colors={colors}>
-        <ChipRow
-          options={RADIUS_PRESETS.map((r) => ({ value: String(r), label: r >= 9999 ? "Full" : `${r}px` }))}
-          value={section.borderRadius != null ? String(section.borderRadius) : "0"}
-          onChange={(v) => onChange({ borderRadius: v ? Number(v) : undefined })}
-          colors={colors}
-          clearable={false}
-        />
+        <RadiusSlider value={section.borderRadius ?? 0} onChange={(v) => onChange({ borderRadius: v })} colors={colors} />
       </Field>
 
       <Field label="Shadow" colors={colors}>
@@ -404,13 +403,7 @@ function ElementStyleControls({
           <ColorField label="Background color" value={String(s.backgroundColor ?? "")} onChange={(v) => onPatch({ backgroundColor: v ?? "" })} colors={colors} />
           <ColorField label="Text color" value={String(s.color ?? "")} onChange={(v) => onPatch({ color: v ?? "" })} colors={colors} />
           <Field label="Rounded corners" colors={colors}>
-            <ChipRow
-              options={[{ value: "0", label: "None" }, { value: "6", label: "Small" }, { value: "12", label: "Medium" }, { value: "20", label: "Large" }, { value: "9999", label: "Pill" }]}
-              value={s.borderRadius != null ? String(s.borderRadius) : undefined}
-              onChange={(v) => onPatch({ borderRadius: v ? Number(v) : 0 })}
-              colors={colors}
-              clearable
-            />
+            <RadiusSlider value={s.borderRadius != null ? Number(s.borderRadius) : 0} onChange={(v) => onPatch({ borderRadius: v ?? 0 })} colors={colors} />
           </Field>
           <ColorField label="Border color" value={String(s.borderColor ?? "")} onChange={(v) => onPatch({ borderColor: v ?? "" })} colors={colors} />
           <Field label="Border width" colors={colors}>
@@ -422,12 +415,7 @@ function ElementStyleControls({
             />
           </Field>
           <Field label="Padding" colors={colors}>
-            <ChipRow
-              options={[{ value: "0", label: "None" }, { value: "8", label: "8px" }, { value: "12", label: "12px" }, { value: "16", label: "16px" }, { value: "24", label: "24px" }]}
-              value={s.padding != null ? String(s.padding) : "0"}
-              onChange={(v) => onPatch({ padding: Number(v) || 0 })}
-              colors={colors}
-            />
+            <SliderControl label="Padding" value={s.padding != null ? Number(s.padding) : 0} min={0} max={48} onChange={(v) => onPatch({ padding: v })} colors={colors} />
           </Field>
           <Field label="Shadow" colors={colors}>
             <ChipRow
@@ -451,13 +439,7 @@ function ElementStyleControls({
           <ColorField label="Button background" value={String(s.backgroundColor ?? "")} onChange={(v) => onPatch({ backgroundColor: v ?? "" })} colors={colors} />
           <ColorField label="Button text color" value={String(s.color ?? "")} onChange={(v) => onPatch({ color: v ?? "" })} colors={colors} />
           <Field label="Rounded corners" colors={colors}>
-            <ChipRow
-              options={[{ value: "0", label: "Sharp" }, { value: "6", label: "Small" }, { value: "12", label: "Medium" }, { value: "24", label: "Large" }, { value: "9999", label: "Pill" }]}
-              value={s.borderRadius != null ? String(s.borderRadius) : undefined}
-              onChange={(v) => onPatch({ borderRadius: v ? Number(v) : 0 })}
-              colors={colors}
-              clearable
-            />
+            <RadiusSlider value={s.borderRadius != null ? Number(s.borderRadius) : 0} onChange={(v) => onPatch({ borderRadius: v ?? 0 })} colors={colors} />
           </Field>
           <ColorField label="Border color" value={String(s.borderColor ?? "")} onChange={(v) => onPatch({ borderColor: v ?? "" })} colors={colors} />
         </>

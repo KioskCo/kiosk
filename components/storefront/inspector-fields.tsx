@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import type { Align9, Section, HeroSection, VideoHeroSection, SocialFeedSection, MapLocationSection, SizeGuideSection, PortfolioSection } from "@/lib/storefront";
 import { SECTION_VARIANTS } from "@/lib/storefront/data";
-import { RADIUS_PRESETS } from "./editor-constants";
 import { products as mockProducts } from "@/lib/storefront/products";
 import { useApp } from "@/context/AppContext";
 import { CustomSectionEditor } from "./CustomSectionEditor";
@@ -14,6 +13,7 @@ import {
   ImageField,
   LinkField,
   ProductSelect,
+  RadiusSlider,
   SwitchRow,
   TextField,
   type ColorScheme,
@@ -543,6 +543,9 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="Slides" colors={colors}>
             <CarouselSlidesEditor slides={s.slides ?? []} onChange={(slides) => on({ slides } as any)} colors={colors} />
           </Field>
+          <Field label="Image corners — not the section itself" colors={colors}>
+            <RadiusSlider value={s.borderRadius} onChange={(v) => on({ borderRadius: v } as any)} colors={colors} />
+          </Field>
           <Field label="Height" colors={colors}>
             <ChipRow
               options={[{ value: "sm", label: "Small" }, { value: "md", label: "Medium" }, { value: "lg", label: "Large" }, { value: "full", label: "Full" }]}
@@ -664,12 +667,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
             />
           </Field>
           <Field label="Card corner radius" colors={colors}>
-            <ChipRow
-              options={RADIUS_PRESETS.map((r) => ({ value: String(r), label: r >= 9999 ? "Full" : `${r}px` }))}
-              value={s.borderRadius != null ? String(s.borderRadius) : "0"}
-              onChange={(v) => on({ borderRadius: v ? Number(v) : undefined })}
-              colors={colors}
-            />
+            <RadiusSlider value={s.borderRadius} onChange={(v) => on({ borderRadius: v })} colors={colors} />
           </Field>
         </>
       );
@@ -721,12 +719,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="Heading" colors={colors}><TextField value={s.heading} onChangeText={(t) => on({ heading: t })} colors={colors} /></Field>
           <SwitchRow label="Use live inventory categories" value={s.useLiveCategories ?? false} onValueChange={(v) => on({ useLiveCategories: v })} colors={colors} />
           <Field label="Card corner radius" colors={colors}>
-            <ChipRow
-              options={RADIUS_PRESETS.map((r) => ({ value: String(r), label: r >= 9999 ? "Full" : `${r}px` }))}
-              value={s.borderRadius != null ? String(s.borderRadius) : "10"}
-              onChange={(v) => on({ borderRadius: v ? Number(v) : undefined })}
-              colors={colors}
-            />
+            <RadiusSlider value={s.borderRadius ?? 10} onChange={(v) => on({ borderRadius: v })} colors={colors} />
           </Field>
           {!s.useLiveCategories && (
             <>
@@ -1153,12 +1146,7 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
             />
           </Field>
           <Field label="Card corner radius" colors={colors}>
-            <ChipRow
-              options={RADIUS_PRESETS.map((r) => ({ value: String(r), label: r >= 9999 ? "Full" : `${r}px` }))}
-              value={s.borderRadius != null ? String(s.borderRadius) : "0"}
-              onChange={(v) => on({ borderRadius: v ? Number(v) : undefined })}
-              colors={colors}
-            />
+            <RadiusSlider value={s.borderRadius} onChange={(v) => on({ borderRadius: v })} colors={colors} />
           </Field>
         </>
       );

@@ -223,6 +223,166 @@ export function PxStepper({
   );
 }
 
+/**
+ * A draggable slider for any "pick a number in a range" control — corner
+ * radius, opacity, spacing, etc. Built on the same bare PanResponder pattern
+ * already used for the inspector sheet's drag-to-close gesture (StoreEditor.tsx)
+ * rather than a dedicated slider library, since this app ships JS-only updates
+ * via `eas update` — a new native dependency would force a full rebuild instead.
+ */
+export function SliderControl({
+  label,
+  value,
+  min = 0,
+  max = 60,
+  step = 1,
+  unit = "px",
+  formatValue,
+  onChange,
+  colors,
+}: {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  /** Overrides the default `${value}${unit}` display, e.g. to show "Full" at the top of the range. */
+  formatValue?: (v: number) => string;
+  onChange: (v: number) => void;
+  colors: ColorScheme;
+}) {
+  const [trackWidth, setTrackWidth] = useState(0);
+  const [dragValue, setDragValue] = useState<number | null>(null);
+  const displayValue = dragValue ?? value;
+
+  const valueFromX = (x: number, w: number) => {
+    const ratio = Math.max(0, Math.min(1, x / w));
+    const raw = min + ratio * (max - min);
+    const stepped = Math.round(raw / step) * step;
+    return Math.max(min, Math.min(max, stepped));
+  };
+
+  const handleTouch = (e: { nativeEvent: { locationX: number } }) => {
+    if (!trackWidth) return;
+    const v = valueFromX(e.nativeEvent.locationX, trackWidth);
+    setDragValue(v);
+    onChange(v);
+  };
+
+  const pct = max > min ? ((displayValue - min) / (max - min)) * 100 : 0;
+
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Text style={[ef.pxLabel, { color: colors.mutedForeground, marginBottom: 0 }]}>{label}</Text>
+        <Text style={{ fontSize: 12, fontWeight: "600", color: colors.foreground, fontVariant: ["tabular-nums"] }}>
+          {formatValue ? formatValue(displayValue) : `${displayValue}${unit}`}
+        </Text>
+      </View>
+      <View
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={handleTouch}
+        onResponderMove={handleTouch}
+        onResponderRelease={() => setDragValue(null)}
+        style={{ height: 28, justifyContent: "center" }}
+      >
+        <View style={{ height: 4, borderRadius: 2, backgroundColor: colors.border }}>
+          <View style={{ height: 4, borderRadius: 2, width: `${pct}%`, backgroundColor: colors.primary }} />
+        </View>
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: `${pct}%`,
+            marginLeft: -10,
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            backgroundColor: colors.primary,
+            borderWidth: 2,
+            borderColor: colors.card,
+            shadowColor: "#000",
+            shadowOpacity: 0.2,
+            shadowRadius: 2,
+            shadowOffset: { width: 0, height: 1 },
+            elevation: 2,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Corner-radius specific slider — 0..max px, plus a "Pill" toggle for the
+ * fully-rounded case (a plain 0..max slider can't reach a meaningful "pill"
+ * value since that depends on the element's own height). undefined reads as 0.
+ */
+export function RadiusSlider({
+  label = "Rounded corners",
+  value,
+  max = 60,
+  onChange,
+  colors,
+  /** Show an "Inherit" option that clears back to undefined — for fields where
+   * unset has a real, distinct meaning ("use the theme default") rather than
+   * just meaning 0. Off by default: most call sites treat unset as 0 anyway. */
+  allowClear = false,
+}: {
+  label?: string;
+  value: number | undefined;
+  max?: number;
+  onChange: (v: number | undefined) => void;
+  colors: ColorScheme;
+  allowClear?: boolean;
+}) {
+  const isPill = (value ?? 0) >= 9999;
+  const isInherited = allowClear && value == null;
+  return (
+    <View style={{ gap: 8 }}>
+      {isPill ? (
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={[ef.pxLabel, { color: colors.mutedForeground, marginBottom: 0 }]}>{label}</Text>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.foreground }}>Pill</Text>
+        </View>
+      ) : (
+        <SliderControl
+          label={label}
+          value={isInherited ? 0 : Math.min(max, value ?? 0)}
+          min={0}
+          max={max}
+          onChange={onChange}
+          colors={colors}
+          formatValue={isInherited ? () => "Inherit" : undefined}
+        />
+      )}
+      <View style={{ flexDirection: "row", gap: 6 }}>
+        <TouchableOpacity
+          onPress={() => onChange(isPill ? 0 : 9999)}
+          style={[ef.chip, { borderColor: isPill ? colors.primary : colors.border, backgroundColor: isPill ? colors.primary + "18" : "transparent" }]}
+        >
+          <Text style={{ fontSize: 12, color: colors.foreground, fontWeight: isPill ? "600" : "400" }}>
+            {isPill ? "✓ Pill (fully rounded)" : "Make it a pill"}
+          </Text>
+        </TouchableOpacity>
+        {allowClear && (
+          <TouchableOpacity
+            onPress={() => onChange(undefined)}
+            style={[ef.chip, { borderColor: isInherited ? colors.primary : colors.border, backgroundColor: isInherited ? colors.primary + "18" : "transparent" }]}
+          >
+            <Text style={{ fontSize: 12, color: colors.foreground, fontWeight: isInherited ? "600" : "400" }}>
+              {isInherited ? "✓ Inherit" : "Reset to inherit"}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+}
+
 export function ColorField({ label, value, onChange, colors }: { label: string; value?: string; onChange: (v: string | undefined) => void; colors: ColorScheme }) {
   const presets = ["#ffffff", "#000000", "#171717", "#6366f1", "#16a34a", "#dc2626", "#c9a96e", "#2563eb"];
   return (
