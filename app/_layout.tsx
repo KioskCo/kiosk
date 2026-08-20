@@ -52,13 +52,25 @@ function UpdateBanner() {
       ? `Updating… ${pct}%`
       : "Update available — installing…";
 
+  // Only downloading has a real, moving percentage to show as a fill — "available"
+  // and "restarting" are instantaneous/indeterminate states, so the track stays
+  // empty/full for those rather than showing a misleading stuck number.
+  const showFill = isDownloading;
+  const fillPct = applying ? 100 : showFill ? pct : 0;
+
   return (
     <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999, elevation: 999, paddingTop: insets.top }}>
-      <View style={{ backgroundColor: "#16A34A", paddingVertical: 10, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 13 }}>
-          {label}
-        </Text>
-        <ActivityIndicator size="small" color="#FFFFFF" />
+      <View style={{ backgroundColor: "#16A34A" }}>
+        <View style={{ paddingVertical: 10, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 13 }}>
+            {label}
+          </Text>
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        </View>
+        {/* Progress track — fills with the actual download percentage */}
+        <View style={{ height: 3, backgroundColor: "rgba(255,255,255,0.25)" }}>
+          <View style={{ height: 3, width: `${fillPct}%`, backgroundColor: "#FFFFFF" }} />
+        </View>
       </View>
     </View>
   );

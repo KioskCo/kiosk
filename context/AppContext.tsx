@@ -75,7 +75,7 @@ export type AdPlatform = "instagram" | "facebook" | "tiktok" | "youtube";
 
 export interface Notification {
   id: string;
-  type: "escrow" | "chat" | "logistics" | "marketing";
+  type: "escrow" | "chat" | "logistics" | "marketing" | "newsletter";
   /** Which sound to play: "money" for payments/orders, "notify" for everything else. Default: "notify" */
   sound?: "money" | "notify";
   title: string;

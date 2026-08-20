@@ -544,8 +544,13 @@ export const customersApi = {
     return api.delete(`/customers/newsletter/${id}`);
   },
 
-  sendNewsletter(subject: string, body: string) {
-    return api.post<{ sent: number; total: number }>("/customers/newsletter/send", { subject, body });
+  bulkUnsubscribe(ids: string[]) {
+    return api.post<{ removed: number }>("/customers/newsletter/bulk-delete", { ids });
+  },
+
+  /** ids omitted (or empty) sends to every current subscriber. */
+  sendNewsletter(subject: string, body: string, ids?: string[]) {
+    return api.post<{ sent: number; total: number }>("/customers/newsletter/send", { subject, body, ids });
   },
 };
 

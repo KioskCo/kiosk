@@ -59,6 +59,13 @@ export default function CustomersScreen() {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Bulk select — newsletter tab only
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  // null = compose targets everyone subscribed; set = compose targets this subset
+  const [sendTargetIds, setSendTargetIds] = useState<string[] | null>(null);
+
   // Customer detail drill-down
   const [selected, setSelected] = useState<CustomerRecord | null>(null);
   const [notes, setNotes] = useState<CustomerNote[]>([]);
@@ -124,6 +131,57 @@ export default function CustomersScreen() {
     setNewsletter((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const toggleSelectMode = () => {
+    setSelectMode((prev) => !prev);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedIds(new Set(newsletter.map((s) => s.id)));
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    const n = selectedIds.size;
+    Alert.alert(
+      "Remove subscribers?",
+      `Remove ${n} subscriber${n !== 1 ? "s" : ""} from your newsletter list? This can't be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            setBulkDeleting(true);
+            try {
+              const ids = Array.from(selectedIds);
+              await customersApi.bulkUnsubscribe(ids);
+              setNewsletter((prev) => prev.filter((s) => !selectedIds.has(s.id)));
+              setSelectedIds(new Set());
+              setSelectMode(false);
+            } catch {
+              Alert.alert("Failed", "Could not remove selected subscribers. Try again.");
+            } finally { setBulkDeleting(false); }
+          },
+        },
+      ]
+    );
+  };
+
+  const openComposeForAll = () => { setSendTargetIds(null); setComposeVisible(true); };
+  const openComposeForSelected = () => {
+    if (selectedIds.size === 0) return;
+    setSendTargetIds(Array.from(selectedIds));
+    setComposeVisible(true);
+  };
+
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
       Alert.alert("Missing fields", "Subject and message are both required.");
@@ -131,12 +189,15 @@ export default function CustomersScreen() {
     }
     setSending(true);
     try {
-      const res = await customersApi.sendNewsletter(subject.trim(), body.trim()) as any;
+      const res = await customersApi.sendNewsletter(subject.trim(), body.trim(), sendTargetIds ?? undefined) as any;
       const sent = res?.sent ?? res?.data?.sent ?? 0;
-      const total = res?.total ?? res?.data?.total ?? newsletter.length;
+      const total = res?.total ?? res?.data?.total ?? (sendTargetIds?.length ?? newsletter.length);
       setComposeVisible(false);
       setSubject("");
       setBody("");
+      setSendTargetIds(null);
+      setSelectMode(false);
+      setSelectedIds(new Set());
       Alert.alert("Sent!", `Delivered to ${sent} of ${total} subscribers.`);
     } catch {
       Alert.alert("Failed", "Could not send newsletter. Try again.");
@@ -157,10 +218,19 @@ export default function CustomersScreen() {
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Customers</Text>
         {tab === "newsletter" && newsletter.length > 0 ? (
-          <TouchableOpacity onPress={() => setComposeVisible(true)} style={[styles.sendBtn, { backgroundColor: colors.primary }]}>
-            <Feather name="send" size={14} color="#fff" />
-            <Text style={[styles.sendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Send</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TouchableOpacity onPress={toggleSelectMode} style={[styles.selectToggleBtn, { borderColor: colors.border }]}>
+              <Text style={[styles.selectToggleText, { color: selectMode ? colors.primary : colors.mutedForeground, fontFamily: "Inter_600SemiBold" }]}>
+                {selectMode ? "Cancel" : "Select"}
+              </Text>
+            </TouchableOpacity>
+            {!selectMode && (
+              <TouchableOpacity onPress={openComposeForAll} style={[styles.sendBtn, { backgroundColor: colors.primary }]}>
+                <Feather name="send" size={14} color="#fff" />
+                <Text style={[styles.sendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Send</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         ) : (
           <View style={{ width: 72 }} />
         )}
@@ -183,6 +253,22 @@ export default function CustomersScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Bulk selection toolbar — newsletter tab only */}
+      {tab === "newsletter" && selectMode && (
+        <View style={[styles.selectBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+          <Text style={[styles.selectCount, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+            {selectedIds.size} selected
+          </Text>
+          <View style={{ flexDirection: "row", gap: 14 }}>
+            <TouchableOpacity onPress={selectedIds.size === newsletter.length ? clearSelection : selectAll}>
+              <Text style={[styles.selectBarLink, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
+                {selectedIds.size === newsletter.length ? "Clear" : "Select all"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.centered}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -247,26 +333,71 @@ export default function CustomersScreen() {
           ) : (
             newsletter.length === 0
               ? <EmptyState icon="mail" text="No newsletter subscribers yet. Add a Newsletter section to your storefront." />
-              : newsletter.map((s) => (
-                  <View key={s.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <View style={[styles.avatar, { backgroundColor: "#EFF6FF" }]}>
-                      <Feather name="mail" size={16} color="#0369A1" />
-                    </View>
-                    <View style={styles.cardBody}>
-                      <Text style={[styles.name, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{s.email}</Text>
-                      {s.name && <Text style={[styles.detail, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>{s.name}</Text>}
-                      {s.phone && <Text style={[styles.detail, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>{s.phone}</Text>}
-                      <Text style={[styles.detail, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-                        {s.source ?? "manual"} · {formatDate(s.created_at)}
-                      </Text>
-                    </View>
-                    <TouchableOpacity onPress={() => handleUnsubscribe(s.id)} style={styles.removeBtn}>
-                      <Feather name="x" size={16} color={colors.mutedForeground} />
+              : newsletter.map((s) => {
+                  const checked = selectedIds.has(s.id);
+                  return (
+                    <TouchableOpacity
+                      key={s.id}
+                      activeOpacity={selectMode ? 0.7 : 1}
+                      onPress={selectMode ? () => toggleSelected(s.id) : undefined}
+                      style={[styles.card, { backgroundColor: colors.card, borderColor: checked ? colors.primary : colors.border }]}
+                    >
+                      {selectMode ? (
+                        <View style={[styles.checkbox, { borderColor: checked ? colors.primary : colors.border, backgroundColor: checked ? colors.primary : "transparent" }]}>
+                          {checked && <Feather name="check" size={13} color="#fff" />}
+                        </View>
+                      ) : (
+                        <View style={[styles.avatar, { backgroundColor: "#EFF6FF" }]}>
+                          <Feather name="mail" size={16} color="#0369A1" />
+                        </View>
+                      )}
+                      <View style={styles.cardBody}>
+                        <Text style={[styles.name, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{s.email}</Text>
+                        {s.name && <Text style={[styles.detail, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>{s.name}</Text>}
+                        {s.phone && <Text style={[styles.detail, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>{s.phone}</Text>}
+                        <Text style={[styles.detail, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
+                          {s.source ?? "manual"} · {formatDate(s.created_at)}
+                        </Text>
+                      </View>
+                      {!selectMode && (
+                        <TouchableOpacity onPress={() => handleUnsubscribe(s.id)} style={styles.removeBtn}>
+                          <Feather name="x" size={16} color={colors.mutedForeground} />
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
-                  </View>
-                ))
+                  );
+                })
           )}
         </ScrollView>
+      )}
+
+      {/* Bulk action bar — appears once at least one subscriber is selected */}
+      {tab === "newsletter" && selectMode && selectedIds.size > 0 && (
+        <View style={[styles.bulkBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom + 12 }]}>
+          <TouchableOpacity
+            onPress={handleBulkDelete}
+            disabled={bulkDeleting}
+            style={[styles.bulkBtn, styles.bulkDeleteBtn, { borderColor: colors.destructive }]}
+          >
+            {bulkDeleting
+              ? <ActivityIndicator size="small" color={colors.destructive} />
+              : <>
+                  <Feather name="trash-2" size={15} color={colors.destructive} />
+                  <Text style={[styles.bulkBtnText, { color: colors.destructive, fontFamily: "Inter_600SemiBold" }]}>
+                    Delete ({selectedIds.size})
+                  </Text>
+                </>}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={openComposeForSelected}
+            style={[styles.bulkBtn, { backgroundColor: colors.primary }]}
+          >
+            <Feather name="send" size={15} color="#fff" />
+            <Text style={[styles.bulkBtnText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>
+              Send ({selectedIds.size})
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Customer detail modal */}
@@ -295,44 +426,60 @@ export default function CustomersScreen() {
       </Modal>
 
       {/* Newsletter compose modal */}
-      <Modal visible={composeVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setComposeVisible(false)}>
+      <Modal
+        visible={composeVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => { setComposeVisible(false); setSendTargetIds(null); }}
+      >
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
           <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <TouchableOpacity onPress={() => setComposeVisible(false)}>
+              <TouchableOpacity onPress={() => { setComposeVisible(false); setSendTargetIds(null); }} hitSlop={8}>
                 <Text style={[styles.modalCancel, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>Cancel</Text>
               </TouchableOpacity>
               <Text style={[styles.modalTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>New Newsletter</Text>
-              <TouchableOpacity onPress={handleSend} disabled={sending}>
+              <TouchableOpacity onPress={handleSend} disabled={sending} hitSlop={8}>
                 {sending
                   ? <ActivityIndicator size="small" color={colors.primary} />
                   : <Text style={[styles.modalSend, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Send</Text>}
               </TouchableOpacity>
             </View>
-            <View style={[styles.recipientRow, { borderBottomColor: colors.border }]}>
-              <Feather name="users" size={14} color={colors.mutedForeground} />
-              <Text style={[styles.recipientText, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-                To: {newsletter.length} subscriber{newsletter.length !== 1 ? "s" : ""}
+            <View style={[styles.recipientRow, { borderBottomColor: colors.border, backgroundColor: colors.secondary }]}>
+              <View style={[styles.recipientIconWrap, { backgroundColor: colors.card }]}>
+                <Feather name="users" size={13} color={colors.mutedForeground} />
+              </View>
+              <Text style={[styles.recipientText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                To: {sendTargetIds ? sendTargetIds.length : newsletter.length} subscriber{(sendTargetIds ? sendTargetIds.length : newsletter.length) !== 1 ? "s" : ""}
+                {sendTargetIds ? " (selected)" : ""}
               </Text>
             </View>
-            <TextInput
-              style={[styles.subjectInput, { color: colors.foreground, borderBottomColor: colors.border, fontFamily: "Inter_400Regular" }]}
-              placeholder="Subject"
-              placeholderTextColor={colors.mutedForeground}
-              value={subject}
-              onChangeText={setSubject}
-              maxLength={150}
-            />
-            <TextInput
-              style={[styles.bodyInput, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
-              placeholder="Write your message here…"
-              placeholderTextColor={colors.mutedForeground}
-              value={body}
-              onChangeText={setBody}
-              multiline
-              textAlignVertical="top"
-              maxLength={10000}
-            />
+            <View style={styles.fieldBlock}>
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>Subject</Text>
+              <TextInput
+                style={[styles.subjectInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+                placeholder="What's this newsletter about?"
+                placeholderTextColor={colors.mutedForeground}
+                value={subject}
+                onChangeText={setSubject}
+                maxLength={150}
+              />
+              <Text style={[styles.charCount, { color: colors.mutedForeground }]}>{subject.length}/150</Text>
+            </View>
+            <View style={[styles.fieldBlock, { flex: 1 }]}>
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>Message</Text>
+              <TextInput
+                style={[styles.bodyInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+                placeholder="Write your message here…"
+                placeholderTextColor={colors.mutedForeground}
+                value={body}
+                onChangeText={setBody}
+                multiline
+                textAlignVertical="top"
+                maxLength={10000}
+              />
+              <Text style={[styles.charCount, { color: colors.mutedForeground, paddingBottom: insets.bottom + 12 }]}>{body.length}/10000</Text>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -555,16 +702,32 @@ const styles = StyleSheet.create({
   sendBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20 },
   sendBtnText: { color: "#fff", fontSize: 13 },
 
+  // Bulk select — newsletter tab
+  selectToggleBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  selectToggleText: { fontSize: 13 },
+  selectBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1 },
+  selectCount: { fontSize: 13 },
+  selectBarLink: { fontSize: 13 },
+  checkbox: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  bulkBar: { flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1 },
+  bulkBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 13, borderRadius: 12 },
+  bulkDeleteBtn: { borderWidth: 1.5 },
+  bulkBtnText: { fontSize: 14 },
+
   // Newsletter compose
   modalRoot: { flex: 1 },
-  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1 },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1 },
   modalTitle: { fontSize: 16 },
   modalCancel: { fontSize: 15 },
   modalSend: { fontSize: 15 },
-  recipientRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
-  recipientText: { fontSize: 13 },
-  subjectInput: { paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, borderBottomWidth: 1 },
-  bodyInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, lineHeight: 22 },
+  recipientRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  recipientIconWrap: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  recipientText: { fontSize: 13.5 },
+  fieldBlock: { paddingHorizontal: 20, paddingTop: 18, gap: 8 },
+  fieldLabel: { fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 },
+  subjectInput: { paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, borderWidth: 1, borderRadius: 12 },
+  bodyInput: { flex: 1, minHeight: 160, paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, lineHeight: 23, borderWidth: 1, borderRadius: 12 },
+  charCount: { fontSize: 11, textAlign: "right" },
 
   // Customer detail modal
   customerHero: { alignItems: "center", padding: 24, gap: 6, borderBottomWidth: 1 },

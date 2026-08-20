@@ -10,6 +10,7 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useColorSchemeStore } from "@/hooks/useColorSchemeStore";
 import { useEscrowNotifications } from "@/hooks/useEscrowNotifications";
+import { useNewsletterNotifications } from "@/hooks/useNewsletterNotifications";
 import { OfflineBanner } from "@/components/OfflineBanner";
 
 export default function TabLayout() {
@@ -18,6 +19,7 @@ export default function TabLayout() {
   const { profile } = useApp();
   const insets = useSafeAreaInsets();
   useEscrowNotifications();
+  useNewsletterNotifications();
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   const tabBarHeight = isWeb ? 64 : 62 + insets.bottom;

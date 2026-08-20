@@ -46,6 +46,7 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
     chat: { icon: "message-text", color: colors.warning, bg: "#FFFBEB" },
     logistics: { icon: "truck-delivery", color: colors.primary, bg: "#EEF2FF" },
     marketing: { icon: "trending-up", color: "#7C3AED", bg: "#F5F3FF" },
+    newsletter: { icon: "email-newsletter", color: "#0369A1", bg: "#EFF6FF" },
   }[type];
 
   return (
