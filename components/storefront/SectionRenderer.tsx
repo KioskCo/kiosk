@@ -1255,6 +1255,13 @@ function ProductThumb({
 }) {
   const el = useContext(SectionElCtx);
   const { products: inventory } = useApp();
+  const { designTokens } = useStorefront();
+  // Matches the shop's own isPortrait derivation exactly — same theme-wide
+  // setting, so a vendor who set "Square" product images sees it here too
+  // instead of the editor always showing portrait regardless.
+  const imageRatio = (designTokens?.productImageRatio ?? "portrait") === "portrait" ? 3 / 4 : 1;
+  // Matches the shop's radiusMap (rounded-none/sm/md/lg/2xl) in px.
+  const cardRadius = ({ none: 0, sm: 4, md: 8, lg: 12, full: 16 } as Record<string, number>)[designTokens?.cardRadius ?? "md"] ?? 8;
 
   const mock = getProduct(slug);
   const inv = mock ? null : inventory.find((p) => p.id === slug);
@@ -1262,6 +1269,7 @@ function ProductThumb({
   if (inv && inv.inStock === false) return null;
 
   const name = mock?.name ?? inv?.name;
+  const category = mock?.category ?? inv?.category ?? "";
   const image = mock?.image ?? inv?.imageUri ?? (inv as any)?.images?.[0] ?? null;
   const price = mock ? mock.price : inv ? inv.price : 0;
 
@@ -1270,7 +1278,7 @@ function ProductThumb({
   const cartPressHandler = onAddToCart ? () => onAddToCart({ id: slug, name, price, imageUri: image ?? undefined }) : undefined;
   const cfg = cartBtnCfg ?? { style: "plus" as const };
 
-  const ImageBlock = ({ ratio, borderRadius = 0 }: { ratio: number; borderRadius?: number }) =>
+  const ImageBlock = ({ ratio, borderRadius = cardRadius }: { ratio: number; borderRadius?: number }) =>
     image ? (
       <Image source={{ uri: image }} style={[{ width: "100%", aspectRatio: ratio, borderRadius }, el.image as object]} contentFit="cover" contentPosition="center" transition={200} />
     ) : (
@@ -1282,11 +1290,11 @@ function ProductThumb({
   // ── OVERLAY — image fills card, gradient + text inside ────────────────────
   if (cardVariant === "overlay") {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ overflow: "hidden", borderRadius: 8 }, el.productCard as object]}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ overflow: "hidden", borderRadius: cardRadius }, el.productCard as object]}>
         {image ? (
-          <Image source={{ uri: image }} style={{ width: "100%", aspectRatio: 3 / 4 }} contentFit="cover" />
+          <Image source={{ uri: image }} style={{ width: "100%", aspectRatio: imageRatio }} contentFit="cover" />
         ) : (
-          <View style={{ width: "100%", aspectRatio: 3 / 4, backgroundColor: "#f0eeeb" }} />
+          <View style={{ width: "100%", aspectRatio: imageRatio, backgroundColor: "#f0eeeb" }} />
         )}
         <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 10, paddingTop: 28 }}>
           <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, top: 0, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 0 }} />
@@ -1307,14 +1315,15 @@ function ProductThumb({
     return (
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ flexDirection: "row", gap: 10, alignItems: "center" }, el.productCard as object]}>
         {image ? (
-          <Image source={{ uri: image }} style={[{ width: 80, height: 80, borderRadius: 8 }, el.image as object]} contentFit="cover" />
+          <Image source={{ uri: image }} style={[{ width: 80, height: 80, borderRadius: cardRadius }, el.image as object]} contentFit="cover" />
         ) : (
-          <View style={[{ width: 80, height: 80, borderRadius: 8, backgroundColor: "#f0eeeb", alignItems: "center", justifyContent: "center" }, el.image as object]}>
+          <View style={[{ width: 80, height: 80, borderRadius: cardRadius, backgroundColor: "#f0eeeb", alignItems: "center", justifyContent: "center" }, el.image as object]}>
             <Feather name="image" size={20} color="#bbb" />
           </View>
         )}
         <View style={{ flex: 1, gap: 3 }}>
           <Text style={[{ fontWeight: "600", color: colors.headingColor, fontSize: 13 }, el.productTitle as object]} numberOfLines={2}>{name}</Text>
+          {category ? <Text style={{ fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: 0.5 }}>{category}</Text> : null}
           <Text style={[{ fontSize: 13, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
           <CartBtn cfg={cfg} accent={colors.accent} onPress={cartPressHandler} />
         </View>
@@ -1326,7 +1335,7 @@ function ProductThumb({
   if (cardVariant === "minimal") {
     return (
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[el.productCard as object]}>
-        <ImageBlock ratio={3 / 4} />
+        <ImageBlock ratio={imageRatio} />
         <View style={{ paddingTop: 6, gap: 2 }}>
           <Text style={[{ fontWeight: "500", color: colors.headingColor, fontSize: 12 }, el.productTitle as object]} numberOfLines={1}>{name}</Text>
           <Text style={[{ fontSize: 12, color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
@@ -1338,7 +1347,7 @@ function ProductThumb({
   // ── EDITORIAL — landscape image, bold name inside gradient footer ──────────
   if (cardVariant === "editorial") {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ overflow: "hidden", borderRadius: 8, position: "relative" }, el.productCard as object]}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ overflow: "hidden", borderRadius: cardRadius, position: "relative" }, el.productCard as object]}>
         {image ? (
           <Image source={{ uri: image }} style={{ width: "100%", aspectRatio: 4 / 3 }} contentFit="cover" />
         ) : (
@@ -1353,6 +1362,7 @@ function ProductThumb({
         />
         {/* Text content */}
         <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 }}>
+          {category ? <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>{category}</Text> : null}
           <Text style={[{ color: "#fff", fontSize: 13, letterSpacing: -0.2 }, el.productTitle as object]} numberOfLines={2}>{name}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 3 }}>
             <Text style={[{ fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.85)" }, el.price as object]}>{formatPrice(price)}</Text>
@@ -1367,7 +1377,7 @@ function ProductThumb({
   if (cardVariant === "chip") {
     return (
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[el.productCard as object]}>
-        <ImageBlock ratio={1} borderRadius={6} />
+        <ImageBlock ratio={1} borderRadius={cardRadius} />
         <View style={{ paddingTop: 4, gap: 1 }}>
           <Text style={[{ fontWeight: "600", color: colors.headingColor, fontSize: 10 }, el.productTitle as object]} numberOfLines={1}>{name}</Text>
           <Text style={[{ fontSize: 10, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
@@ -1379,11 +1389,14 @@ function ProductThumb({
   // ── BORDERED — classic with card border ───────────────────────────────────
   if (cardVariant === "bordered") {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ borderWidth: 1, borderColor: "#e5e5e5", borderRadius: 8, overflow: "hidden" }, el.productCard as object]}>
-        <ImageBlock ratio={3 / 4} />
+      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ borderWidth: 1, borderColor: "#e5e5e5", borderRadius: cardRadius, overflow: "hidden" }, el.productCard as object]}>
+        <ImageBlock ratio={imageRatio} />
         <View style={{ padding: 10, gap: 4 }}>
           <Text style={[{ fontWeight: "600", color: colors.headingColor, fontSize: 12 }, el.productTitle as object]} numberOfLines={2}>{name}</Text>
-          <Text style={[{ fontSize: 13, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            {category ? <Text style={{ fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 1 }} numberOfLines={1}>{category}</Text> : <View />}
+            <Text style={[{ fontSize: 13, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
+          </View>
           <CartBtn cfg={cfg} accent={colors.accent} onPress={cartPressHandler} />
         </View>
       </TouchableOpacity>
@@ -1394,10 +1407,13 @@ function ProductThumb({
   if (cardVariant === "floating") {
     return (
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[{ paddingBottom: 4 }, el.productCard as object]}>
-        <ImageBlock ratio={3 / 4} borderRadius={8} />
+        <ImageBlock ratio={imageRatio} borderRadius={cardRadius} />
         <View style={{ marginHorizontal: 6, marginTop: -12, borderRadius: 8, backgroundColor: "#fff", padding: 8, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3, gap: 3 }}>
           <Text style={[{ fontWeight: "600", color: colors.headingColor, fontSize: 12 }, el.productTitle as object]} numberOfLines={2}>{name}</Text>
-          <Text style={[{ fontSize: 12, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            {category ? <Text style={{ fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 1 }} numberOfLines={1}>{category}</Text> : <View />}
+            <Text style={[{ fontSize: 12, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
+          </View>
           <CartBtn cfg={cfg} accent={colors.accent} onPress={cartPressHandler} />
         </View>
       </TouchableOpacity>
@@ -1408,7 +1424,7 @@ function ProductThumb({
   if (cardVariant === "compact") {
     return (
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[el.productCard as object]}>
-        <ImageBlock ratio={1} borderRadius={6} />
+        <ImageBlock ratio={1} borderRadius={cardRadius} />
         <View style={{ paddingTop: 6, paddingHorizontal: 2, flexDirection: "row", alignItems: "center", gap: 4 }}>
           <View style={{ flex: 1, gap: 1 }}>
             <Text style={[{ fontWeight: "600", color: colors.headingColor, fontSize: 11 }, el.productTitle as object]} numberOfLines={1}>{name}</Text>
@@ -1423,7 +1439,7 @@ function ProductThumb({
   // ── CLASSIC (default) — image top, right layout toggle ────────────────────
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[el.productCard as object]}>
-      <ImageBlock ratio={3 / 4} />
+      <ImageBlock ratio={imageRatio} />
       {cartBtnLayout === "right" ? (
         <View style={{ padding: 8, flexDirection: "row", alignItems: "center", gap: 6 }}>
           <View style={{ flex: 1, gap: 2 }}>
@@ -1435,7 +1451,10 @@ function ProductThumb({
       ) : (
         <View style={{ padding: 10, gap: 2 }}>
           <Text style={[{ fontWeight: "600", color: colors.headingColor, fontSize: 13 }, el.productTitle as object]} numberOfLines={2}>{name}</Text>
-          <Text style={[{ fontSize: 13, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            {category ? <Text style={{ fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 1 }} numberOfLines={1}>{category}</Text> : <View />}
+            <Text style={[{ fontSize: 13, fontWeight: "700", color: colors.accent }, el.price as object]}>{formatPrice(price)}</Text>
+          </View>
           <CartBtn cfg={cfg} accent={colors.accent} onPress={cartPressHandler} />
         </View>
       )}
