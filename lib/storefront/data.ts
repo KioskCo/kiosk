@@ -189,6 +189,9 @@ export type CarouselSection = SectionBase & {
   borderRadius?: number;
 };
 export type CartBtnStyle = "plus" | "cart" | "text" | "plus-text" | "cart-text";
+/** Which glyph shows on the add-to-cart button — independent of cartBtnStyle
+ * (which controls layout: icon-only vs icon+text vs text-only). */
+export type CartBtnIcon = "cart" | "cart-plus" | "bag" | "bag-plus" | "basket" | "plus";
 export type ProductCardVariant = "classic" | "minimal" | "overlay" | "horizontal" | "bordered" | "floating" | "editorial" | "chip" | "compact";
 export type FeaturedProductsSection = SectionBase & {
   type: "featured-products"; heading: string; subheading?: string; productSlugs: string[]; columns: 2 | 3 | 4;
@@ -196,6 +199,7 @@ export type FeaturedProductsSection = SectionBase & {
   sourceMode?: "manual" | "inventory";
   /** Add-to-cart button appearance */
   cartBtnStyle?: CartBtnStyle;
+  cartBtnIcon?: CartBtnIcon;
   cartBtnBg?: string;
   cartBtnColor?: string;
   cartBtnLabel?: string;
@@ -278,6 +282,7 @@ export type ProductDetailSection = SectionBase & {
   showDescription?: boolean;
   addToCartLabel?: string;
   showShareBtn?: boolean;
+  cartBtnIcon?: CartBtnIcon;
 };
 export type CheckoutFormSection = SectionBase & {
   type: "checkout-form";
@@ -298,6 +303,7 @@ export type ShopGridSection = SectionBase & {
   columns?: 2 | 3 | 4;
   pageSize?: number;
   cartBtnStyle?: CartBtnStyle;
+  cartBtnIcon?: CartBtnIcon;
   cartBtnBg?: string;
   cartBtnColor?: string;
   cartBtnLabel?: string;

@@ -626,6 +626,24 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
               colors={colors}
             />
           </Field>
+          {s.cartBtnStyle !== "text" && (
+            <Field label="Shopping icon" colors={colors}>
+              <ChipRow
+                options={[
+                  { value: "bag", label: "Bag" },
+                  { value: "bag-plus", label: "Bag+" },
+                  { value: "cart", label: "Cart" },
+                  { value: "cart-plus", label: "Cart+" },
+                  { value: "basket", label: "Basket" },
+                  { value: "plus", label: "Plus" },
+                ]}
+                value={s.cartBtnIcon}
+                onChange={(v) => on({ cartBtnIcon: v as any })}
+                colors={colors}
+                clearable
+              />
+            </Field>
+          )}
           {(s.cartBtnStyle === "text" || s.cartBtnStyle === "plus-text" || s.cartBtnStyle === "cart-text") && (
             <Field label="Button label" colors={colors}>
               <TextField value={s.cartBtnLabel ?? "Add to cart"} onChangeText={(t) => on({ cartBtnLabel: t })} placeholder="Add to cart" colors={colors} />
@@ -938,6 +956,22 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
           <Field label="Add-to-cart button label" colors={colors}>
             <TextField value={s.addToCartLabel ?? ""} onChangeText={(t) => on({ addToCartLabel: t || undefined })} placeholder="Add to bag" colors={colors} />
           </Field>
+          <Field label="Shopping icon" colors={colors}>
+            <ChipRow
+              options={[
+                { value: "bag", label: "Bag" },
+                { value: "bag-plus", label: "Bag+" },
+                { value: "cart", label: "Cart" },
+                { value: "cart-plus", label: "Cart+" },
+                { value: "basket", label: "Basket" },
+                { value: "plus", label: "Plus" },
+              ]}
+              value={s.cartBtnIcon}
+              onChange={(v) => on({ cartBtnIcon: v as any })}
+              colors={colors}
+              clearable
+            />
+          </Field>
           <SwitchRow label="Show quantity stepper" value={s.showQty !== false} onValueChange={(v) => on({ showQty: v })} colors={colors} />
           <SwitchRow label="Show description" value={s.showDescription !== false} onValueChange={(v) => on({ showDescription: v })} colors={colors} />
           <SwitchRow label="Show share button" value={s.showShareBtn === true} onValueChange={(v) => on({ showShareBtn: v })} colors={colors} />
@@ -1105,6 +1139,24 @@ export function renderInspectorFields(s: Section, on: (patch: Partial<Section>) 
               colors={colors}
             />
           </Field>
+          {s.cartBtnStyle !== "text" && (
+            <Field label="Shopping icon" colors={colors}>
+              <ChipRow
+                options={[
+                  { value: "bag", label: "Bag" },
+                  { value: "bag-plus", label: "Bag+" },
+                  { value: "cart", label: "Cart" },
+                  { value: "cart-plus", label: "Cart+" },
+                  { value: "basket", label: "Basket" },
+                  { value: "plus", label: "Plus" },
+                ]}
+                value={s.cartBtnIcon}
+                onChange={(v) => on({ cartBtnIcon: v as any })}
+                colors={colors}
+                clearable
+              />
+            </Field>
+          )}
           {(s.cartBtnStyle === "text" || s.cartBtnStyle === "plus-text" || s.cartBtnStyle === "cart-text") && (
             <Field label="Button label" colors={colors}>
               <TextField value={s.cartBtnLabel ?? "Add to cart"} onChangeText={(t) => on({ cartBtnLabel: t })} placeholder="Add to cart" colors={colors} />

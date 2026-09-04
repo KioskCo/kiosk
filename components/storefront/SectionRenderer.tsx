@@ -1177,9 +1177,19 @@ function CarouselDotsRN({ count, page, accent, inline }: { count: number; page: 
 
 type CartBtnConfig = {
   style?: string;   // "plus" | "cart" | "text" | "plus-text" | "cart-text"
+  icon?: string;    // "bag" | "bag-plus" | "cart" | "cart-plus" | "basket" | "plus" — overrides the style's default glyph
   bg?: string;
   color?: string;
   label?: string;
+};
+
+const CART_ICON_GLYPH: Record<string, string> = {
+  bag: "bag-outline",
+  "bag-plus": "bag-add-outline",
+  cart: "cart-outline",
+  "cart-plus": "cart-outline",
+  basket: "basket-outline",
+  plus: "add",
 };
 
 function CartBtn({ cfg, accent, onPress }: { cfg: CartBtnConfig; accent: string; onPress?: () => void }) {
@@ -1192,11 +1202,12 @@ function CartBtn({ cfg, accent, onPress }: { cfg: CartBtnConfig; accent: string;
   const br = btnEl.borderRadius != null ? Number(btnEl.borderRadius) : 6;
   const fontSize = btnEl.fontSize != null ? Number(btnEl.fontSize) : 12;
 
-  const iconEl = style === "cart" || style === "cart-text"
-    ? <Ionicons name="bag-add-outline" size={14} color={fg} />
-    : style === "plus" || style === "plus-text"
-    ? <Ionicons name="add" size={14} color={fg} />
-    : null;
+  const iconGlyph = cfg.icon
+    ? CART_ICON_GLYPH[cfg.icon]
+    : (style === "cart" || style === "cart-text") ? CART_ICON_GLYPH["bag-plus"]
+    : (style === "plus" || style === "plus-text") ? CART_ICON_GLYPH.plus
+    : undefined;
+  const iconEl = iconGlyph ? <Ionicons name={iconGlyph as any} size={14} color={fg} /> : null;
 
   const textEl = (style === "text" || style === "plus-text" || style === "cart-text")
     ? <Text style={{ color: fg, fontSize, fontWeight: String(btnEl.fontWeight ?? "700") as any }}>{label}</Text>
@@ -1460,7 +1471,7 @@ function FeaturedBlock({
     ? inventorySorted.slice(0, 8).map((p) => p.id)
     : s.productSlugs.slice(0, 8));
 
-  const cartCfg: CartBtnConfig = { style: s.cartBtnStyle, bg: s.cartBtnBg, color: s.cartBtnColor, label: s.cartBtnLabel };
+  const cartCfg: CartBtnConfig = { style: s.cartBtnStyle, icon: s.cartBtnIcon, bg: s.cartBtnBg, color: s.cartBtnColor, label: s.cartBtnLabel };
   const cardVariant = s.cardVariant ?? "classic";
 
   const heading = (s.heading || s.subheading) ? (
@@ -2242,7 +2253,7 @@ function ShopGridBlock({
   onLinkPress?: (href: string) => void;
   initialCategory?: string;
 }) {
-  const cartCfg: CartBtnConfig = { style: s.cartBtnStyle, bg: s.cartBtnBg, color: s.cartBtnColor, label: s.cartBtnLabel };
+  const cartCfg: CartBtnConfig = { style: s.cartBtnStyle, icon: s.cartBtnIcon, bg: s.cartBtnBg, color: s.cartBtnColor, label: s.cartBtnLabel };
   const cardVariant = s.cardVariant ?? "classic";
   const [cat, setCat] = useState(initialCategory || "All");
   const [shopQ, setShopQ] = useState("");
@@ -2663,8 +2674,9 @@ function ProductDetailBlock({
             onAddToCart?.({ id: slug, name, price, imageUri: mainImage });
             setQty(1);
           }}
-          style={[styles.btn, { flex: 1, backgroundColor: colors.accent }, el.btn as object]}
+          style={[styles.btn, { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: colors.accent }, el.btn as object]}
         >
+          <Ionicons name={CART_ICON_GLYPH[s.cartBtnIcon ?? "bag"] as any} size={15} color="#fff" />
           <Text style={styles.btnText}>{cartLabel} — {formatPrice(price * qty)}</Text>
         </TouchableOpacity>
       </View>
