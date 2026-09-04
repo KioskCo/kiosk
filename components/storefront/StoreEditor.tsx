@@ -281,6 +281,18 @@ export function StoreEditor({ templateId }: Props) {
         <TouchableOpacity onPress={() => router.push(`/store-preview/${templateId}` as any)} style={styles.toolBtn}>
           <Feather name="eye" size={18} color={colors.primary} />
         </TouchableOpacity>
+        {/* Opens the real, live store in the device browser — previously the
+            only way to do this was the one-time "Store is live!" modal right
+            after activating, so seeing it again meant deactivating and
+            reactivating just to get back to that modal. This is always here
+            once the store has ever been launched, whether it's active right
+            now or not (a paused store still has a launchUrl, it just shows
+            the paused page). */}
+        {template.launchUrl && (
+          <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync(template.launchUrl!)} style={styles.toolBtn} accessibilityLabel="Open live store">
+            <Feather name="globe" size={18} color={colors.primary} />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={() => setHelpOpen(true)} style={styles.toolBtn}>
           <Feather name="help-circle" size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
