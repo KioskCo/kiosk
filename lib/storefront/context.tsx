@@ -505,7 +505,7 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
         // The store only resolves if its row exists on the backend, so make sure
         // the template is created there first, then publish its full JSON and
         // set launched=true — otherwise /store/:username (and the @ link) 404.
-        const publish = async (serverId: string): Promise<{ ok: boolean; error?: string }> => {
+        const publish = async (serverId: string, allowRecreate = true): Promise<{ ok: boolean; error?: string }> => {
           try {
             await templatesApi.update(serverId, { settings: { templateJson: JSON.stringify(tpl) } });
             const activated = await templatesApi.activate(serverId, slug);
@@ -521,6 +521,27 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
             }
             return { ok: true };
           } catch (e) {
+            // A serverId saved from a previous backend (e.g. before switching
+            // API hosts) points at a row that no longer exists here — the
+            // template was never actually created on *this* backend, so
+            // recreate it instead of failing outright.
+            if ((e as any)?.status === 404 && allowRecreate) {
+              try {
+                const res = await templatesApi.create({ name: tpl.name });
+                const created = (res as any).data ?? res;
+                const newServerId = created?.id;
+                if (!newServerId) throw new Error("create returned no id");
+                setState((s) => ({
+                  ...s,
+                  templates: s.templates.map((t) => (t.id === id ? { ...t, serverId: newServerId } : t)),
+                }));
+                return publish(newServerId, false);
+              } catch (e2) {
+                console.warn("[launch] recreate after stale serverId failed:", e2);
+                rollbackLaunch();
+                return { ok: false, error: errMsg(e2) };
+              }
+            }
             console.warn("[launch] publish failed:", e);
             rollbackLaunch();
             return { ok: false, error: errMsg(e) };
