@@ -17,7 +17,10 @@ export function WalletCard() {
   const colors = useColors();
   const router = useRouter();
   const { escrowBalance, availableBalance } = useApp();
-  const [balanceVisible, setBalanceVisible] = useState(true);
+  // Hidden by default on every open — a shoulder-surfing/privacy precaution
+  // for wallet balances, not a one-time onboarding thing to remember past
+  // this screen instance. Tap the eye to reveal it.
+  const [balanceVisible, setBalanceVisible] = useState(false);
 
   const toggle = () => {
     hapticImpact();

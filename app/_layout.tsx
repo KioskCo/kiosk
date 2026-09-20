@@ -51,13 +51,21 @@ function UpdateBanner() {
   // 100 on its own, and let the real value take over immediately if it's
   // ever actually ahead of the simulation.
   const [simPct, setSimPct] = useState(0);
+  // If isDownloading itself never resolves (a real native-level stall — a
+  // dropped connection, a slow network never finishing the transfer — not
+  // something this screen's own code controls), sitting at a fake 92%
+  // forever quietly lies about still being in progress. Surface that
+  // honestly after a stretch of time instead.
+  const [stalled, setStalled] = useState(false);
   useEffect(() => {
-    if (!isDownloading) { setSimPct(0); return; }
+    if (!isDownloading) { setSimPct(0); setStalled(false); return; }
     setSimPct(0);
+    setStalled(false);
     const id = setInterval(() => {
       setSimPct((p) => (p >= 92 ? p : p + Math.max(1, Math.round((92 - p) * 0.18))));
     }, 120);
-    return () => clearInterval(id);
+    const stallTimer = setTimeout(() => setStalled(true), 25000);
+    return () => { clearInterval(id); clearTimeout(stallTimer); };
   }, [isDownloading]);
 
   const applying = isUpdatePending || isRestarting;
@@ -68,7 +76,7 @@ function UpdateBanner() {
   const label = applying
     ? "Update ready — restarting…"
     : isDownloading
-      ? `Updating… ${pct}%`
+      ? (stalled ? "Update is taking a while — check your connection" : `Updating… ${pct}%`)
       : "Update available — installing…";
 
   // Only downloading has a real, moving percentage to show as a fill — "available"
@@ -79,7 +87,7 @@ function UpdateBanner() {
 
   return (
     <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999, elevation: 999, paddingTop: insets.top }}>
-      <View style={{ backgroundColor: "#16A34A" }}>
+      <View style={{ backgroundColor: stalled ? "#D97706" : "#16A34A" }}>
         <View style={{ paddingVertical: 10, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 13 }}>
             {label}
