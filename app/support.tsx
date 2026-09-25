@@ -50,6 +50,13 @@ export default function SupportScreen() {
   const [subject, setSubject] = useState<string | undefined>();
   const [showSubject, setShowSubject] = useState(true);
 
+  // Falls back to "now" instead of an unparseable Date if the server ever
+  // sends a missing/malformed timestamp — better than rendering "Invalid Date".
+  const parseTime = (raw: unknown): Date => {
+    const d = new Date(raw as string);
+    return Number.isNaN(d.getTime()) ? new Date() : d;
+  };
+
   const loadMessages = () => {
     supportApi.getMessages().then((res) => {
       const history = (res.data ?? []).map((m) => ([
@@ -57,14 +64,14 @@ export default function SupportScreen() {
           id: m.id,
           from: "vendor" as const,
           text: m.message,
-          time: new Date(m.created_at),
+          time: parseTime(m.created_at),
           status: "sent" as const,
         },
         ...(m.reply ? [{
           id: `reply-${m.id}`,
           from: "support" as const,
           text: m.reply,
-          time: new Date(m.created_at),
+          time: parseTime(m.created_at),
         }] : []),
       ])).flat();
 
@@ -134,8 +141,7 @@ export default function SupportScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
-      behavior="padding"
-      enabled={Platform.OS === "ios"}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12, borderBottomColor: colors.border, backgroundColor: colors.card }]}>
