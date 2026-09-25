@@ -1032,6 +1032,8 @@ export type NavbarConfig = {
 };
 export type FooterColumn = { title: string; links: NavLink[] };
 export type FooterSocialPlatform = "instagram" | "twitter" | "facebook" | "tiktok" | "youtube" | "whatsapp" | "linkedin" | "pinterest" | "snapchat";
+/** Visual style variant — mirrors NavbarStyle so footer and navbar can match or contrast intentionally. */
+export type FooterStyle = "default" | "transparent" | "filled" | "minimal" | "bordered";
 export type FooterConfig = {
   brand: string;
   tagline: string;
@@ -1055,6 +1057,14 @@ export type FooterConfig = {
     btnBg?: string;
     btnColor?: string;
   }>;
+  /** Custom font for the brand name text — overrides the global heading font
+   * when set, same idea as navbar.brandFont. Unset falls back to the
+   * storefront's global heading font (previous, unconditional behavior). */
+  brandFont?: FontHeading;
+  /** Visual style variant (default "default") */
+  footerStyle?: FooterStyle;
+  /** Custom background colour (overrides footerStyle bg) */
+  footerBg?: string;
 };
 
 export const defaultNavbar: NavbarConfig = {

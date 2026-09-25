@@ -546,10 +546,24 @@ export function StoreFooter({
   const { designTokens } = useStorefront();
   const globalHeadingFont = designTokens?.fontHeading;
   const dark = theme !== "light";
-  const bg = dark ? "#0a0a0a" : "#f8f8f8";
-  const fg = dark ? "#ffffff" : "#111111";
-  const muted = dark ? "#888888" : "#555555";
-  const subtle = dark ? "#2a2a2a" : "#e5e5e5";
+  const footerStyle = config.footerStyle ?? "default";
+
+  // Compute bg/fg/muted/subtle based on visual style variant — mirrors the
+  // navbar's navStyle logic above so the two can match or contrast on purpose.
+  let bg: string, fg: string, muted: string, subtle: string;
+  if (footerStyle === "transparent") {
+    bg = "transparent"; fg = dark ? "#ffffff" : "#111111"; muted = dark ? "#aaaaaa" : "#555555"; subtle = "transparent";
+  } else if (footerStyle === "filled") {
+    bg = config.footerBg ?? "#111111"; fg = "#ffffff"; muted = "rgba(255,255,255,0.65)"; subtle = "rgba(255,255,255,0.12)";
+  } else if (footerStyle === "minimal") {
+    bg = dark ? "#0a0a0a" : "#ffffff"; fg = dark ? "#ffffff" : "#111111"; muted = dark ? "#888888" : "#666666"; subtle = "transparent";
+  } else if (footerStyle === "bordered") {
+    bg = dark ? "#0a0a0a" : "#ffffff"; fg = dark ? "#ffffff" : "#111111"; muted = dark ? "#888888" : "#555555"; subtle = dark ? "#444444" : "#222222";
+  } else {
+    // default
+    bg = dark ? "#0a0a0a" : "#f8f8f8"; fg = dark ? "#ffffff" : "#111111"; muted = dark ? "#888888" : "#555555"; subtle = dark ? "#2a2a2a" : "#e5e5e5";
+  }
+  if (config.footerBg && footerStyle !== "filled") bg = config.footerBg;
 
   const align = config.textAlign ?? "left";
   const alignItems =
@@ -569,19 +583,22 @@ export function StoreFooter({
                 {fShowLogo && (
                   <Image source={{ uri: config.logoImage! }} style={{ height: fLogoH, width: fLogoH }} contentFit="contain" />
                 )}
-                {fShowText && (
-                  <Text
-                    style={[
-                      footerStyles.brand,
-                      { color: fg, textAlign: align },
-                      globalHeadingFont && BRAND_FONT_MAP[globalHeadingFont]
-                        ? { fontFamily: BRAND_FONT_MAP[globalHeadingFont], fontWeight: "normal" }
-                        : {},
-                    ]}
-                  >
-                    {config.brand}
-                  </Text>
-                )}
+                {fShowText && (() => {
+                  const effectiveFont = config.brandFont ?? globalHeadingFont;
+                  return (
+                    <Text
+                      style={[
+                        footerStyles.brand,
+                        { color: fg, textAlign: align },
+                        effectiveFont && BRAND_FONT_MAP[effectiveFont]
+                          ? { fontFamily: BRAND_FONT_MAP[effectiveFont], fontWeight: "normal" }
+                          : {},
+                      ]}
+                    >
+                      {config.brand}
+                    </Text>
+                  );
+                })()}
               </View>
             );
           })()}

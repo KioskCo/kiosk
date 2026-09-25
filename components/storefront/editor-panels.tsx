@@ -11,6 +11,7 @@ import {
   type CustomBlock,
   type DesignTokens,
   type FontHeading,
+  type FooterStyle,
   type NavbarLayout,
   type NavbarLogoMode,
   type NavbarStyle,
@@ -607,7 +608,41 @@ export function GlobalPanelFull({ colors, mode }: { colors: ColorScheme; mode: "
           )}
 
           <Field label="Brand name" colors={colors}><TextField value={footer.brand} onChangeText={(t) => updateFooter({ brand: t })} colors={colors} /></Field>
+          <Field label="Brand font — custom font for your shop name (default: matches your theme's heading font)" colors={colors}>
+            <FontSelect
+              value={footer.brandFont ?? undefined}
+              onChange={(v) => updateFooter({ brandFont: (v as FontHeading | undefined) })}
+              options={BRAND_FONT_OPTIONS}
+              colors={colors}
+              nullable
+            />
+          </Field>
           <Field label="Tagline" colors={colors}><TextField value={footer.tagline} onChangeText={(t) => updateFooter({ tagline: t })} colors={colors} /></Field>
+          <Field label="Footer style" colors={colors}>
+            <ChipRow
+              options={[
+                { value: "default", label: "Default" },
+                { value: "minimal", label: "Minimal" },
+                { value: "bordered", label: "Bordered" },
+                { value: "filled", label: "Filled" },
+                { value: "transparent", label: "Glass" },
+              ]}
+              value={footer.footerStyle ?? "default"}
+              onChange={(v) => updateFooter({ footerStyle: v as FooterStyle })}
+              colors={colors}
+              clearable={false}
+            />
+          </Field>
+          {(footer.footerStyle === "filled" || footer.footerStyle === "bordered") && (
+            <Field label="Footer background colour" colors={colors}>
+              <TextField
+                value={footer.footerBg ?? ""}
+                onChangeText={(v) => updateFooter({ footerBg: v || undefined })}
+                placeholder={footer.footerStyle === "filled" ? "#111111" : ""}
+                colors={colors}
+              />
+            </Field>
+          )}
           <Field label="Text alignment" colors={colors}>
             <ChipRow
               options={[
