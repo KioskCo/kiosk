@@ -549,8 +549,8 @@ export const customersApi = {
   },
 
   /** ids omitted (or empty) sends to every current subscriber. */
-  sendNewsletter(subject: string, body: string, ids?: string[], imageUrl?: string) {
-    return api.post<{ sent: number; total: number }>("/customers/newsletter/send", { subject, body, ids, imageUrl });
+  sendNewsletter(subject: string, body: string, ids?: string[], imageUrls?: string[]) {
+    return api.post<{ sent: number; total: number }>("/customers/newsletter/send", { subject, body, ids, imageUrls });
   },
 };
 

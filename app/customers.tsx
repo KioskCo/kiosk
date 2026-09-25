@@ -58,9 +58,10 @@ export default function CustomersScreen() {
   const [composeVisible, setComposeVisible] = useState(false);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [imageUri, setImageUri] = useState("");
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUris, setImageUris] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+
+  const MAX_PROMO_IMAGES = 4;
 
   // Bulk select — newsletter tab only
   const [selectMode, setSelectMode] = useState(false);
@@ -186,50 +187,55 @@ export default function CustomersScreen() {
   };
   const openComposeForOne = (id: string) => { setSendTargetIds([id]); setComposeVisible(true); };
 
-  const pickPromoImage = async () => {
+  const pickPromoImages = async () => {
+    if (imageUris.length >= MAX_PROMO_IMAGES) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") return;
+    const remaining = MAX_PROMO_IMAGES - imageUris.length;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [16, 9],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
       quality: 0.85,
       base64: true,
     });
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
+    if (result.canceled || result.assets.length === 0) return;
+    const assets = result.assets.slice(0, remaining);
     // Show immediately — no waiting
-    setImageUri(asset.uri);
-    if (asset.base64) {
-      setUploadingImage(true);
-      uploadsApi.uploadToCloudinary(asset.base64, asset.mimeType ?? "image/jpeg")
-        .then((cloudUrl) => setImageUri(cloudUrl))
-        .catch(() => Alert.alert("Upload failed", "Could not upload the image. Try again."))
-        .finally(() => setUploadingImage(false));
-    }
+    const localUris = assets.map((a) => a.uri);
+    setImageUris((prev) => [...prev, ...localUris].slice(0, MAX_PROMO_IMAGES));
+    // Upload each in background and swap in the Cloudinary URL when it lands
+    assets.forEach((asset) => {
+      if (asset.base64) {
+        uploadsApi.uploadToCloudinary(asset.base64, asset.mimeType ?? "image/jpeg")
+          .then((cloudUrl) => setImageUris((prev) => prev.map((u) => (u === asset.uri ? cloudUrl : u))))
+          .catch(() => Alert.alert("Upload failed", "One of the images could not be uploaded. Remove and try again."));
+      }
+    });
   };
+
+  const removePromoImage = (uri: string) => setImageUris((prev) => prev.filter((u) => u !== uri));
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
       Alert.alert("Missing fields", "Subject and message are both required.");
       return;
     }
-    if (uploadingImage) {
-      Alert.alert("Image still uploading", "Wait for the image to finish uploading before sending.");
+    // A local file:// URI never made it to Cloudinary (e.g. offline mid-pick) —
+    // sending that as-is would embed a dead image link in every subscriber's inbox.
+    if (imageUris.some((u) => u.startsWith("file://"))) {
+      Alert.alert("Image still uploading", "Wait for the image(s) to finish uploading before sending.");
       return;
     }
     setSending(true);
     try {
-      // A local file:// URI never made it to Cloudinary (e.g. offline mid-pick) —
-      // sending that as-is would embed a dead link in every subscriber's inbox.
-      const promoImageUrl = imageUri && !imageUri.startsWith("file://") ? imageUri : undefined;
-      const res = await customersApi.sendNewsletter(subject.trim(), body.trim(), sendTargetIds ?? undefined, promoImageUrl) as any;
+      const res = await customersApi.sendNewsletter(subject.trim(), body.trim(), sendTargetIds ?? undefined, imageUris.length > 0 ? imageUris : undefined) as any;
       const sent = res?.sent ?? res?.data?.sent ?? 0;
       const total = res?.total ?? res?.data?.total ?? (sendTargetIds?.length ?? newsletter.length);
       setComposeVisible(false);
       setSubject("");
       setBody("");
-      setImageUri("");
+      setImageUris([]);
       setSendTargetIds(null);
       setSelectMode(false);
       setSelectedIds(new Set());
@@ -510,32 +516,40 @@ export default function CustomersScreen() {
               <Text style={[styles.charCount, { color: colors.mutedForeground }]}>{subject.length}/150</Text>
             </View>
             <View style={styles.fieldBlock}>
-              <Text style={[styles.fieldLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>Promo image (optional)</Text>
-              {imageUri ? (
-                <View style={{ position: "relative" }}>
-                  <Image source={{ uri: imageUri }} style={styles.promoImage} />
-                  {uploadingImage && (
-                    <View style={styles.promoImageOverlay}>
-                      <ActivityIndicator size="small" color="#fff" />
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>
+                Promo images (optional) {imageUris.length > 0 ? `— ${imageUris.length}/${MAX_PROMO_IMAGES}` : ""}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {imageUris.map((uri) => {
+                  const isUploading = uri.startsWith("file://");
+                  return (
+                    <View key={uri} style={{ position: "relative" }}>
+                      <Image source={{ uri }} style={styles.promoImageThumb} />
+                      {isUploading && (
+                        <View style={styles.promoImageOverlay}>
+                          <ActivityIndicator size="small" color="#fff" />
+                        </View>
+                      )}
+                      <TouchableOpacity
+                        onPress={() => removePromoImage(uri)}
+                        style={styles.promoImageRemove}
+                        hitSlop={8}
+                      >
+                        <Feather name="x" size={12} color="#fff" />
+                      </TouchableOpacity>
                     </View>
-                  )}
+                  );
+                })}
+                {imageUris.length < MAX_PROMO_IMAGES && (
                   <TouchableOpacity
-                    onPress={() => setImageUri("")}
-                    style={styles.promoImageRemove}
-                    hitSlop={8}
+                    onPress={pickPromoImages}
+                    style={[styles.promoImagePicker, { borderColor: colors.border, backgroundColor: colors.card }]}
                   >
-                    <Feather name="x" size={14} color="#fff" />
+                    <Feather name="image" size={18} color={colors.mutedForeground} />
+                    <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 11, marginTop: 2 }}>Add</Text>
                   </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={pickPromoImage}
-                  style={[styles.promoImagePicker, { borderColor: colors.border, backgroundColor: colors.card }]}
-                >
-                  <Feather name="image" size={18} color={colors.mutedForeground} />
-                  <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>Add an image</Text>
-                </TouchableOpacity>
-              )}
+                )}
+              </View>
             </View>
             <View style={[styles.fieldBlock, { flex: 1 }]}>
               <Text style={[styles.fieldLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>Message</Text>
@@ -799,10 +813,10 @@ const styles = StyleSheet.create({
   subjectInput: { paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, borderWidth: 1, borderRadius: 12 },
   bodyInput: { flex: 1, minHeight: 160, paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, lineHeight: 23, borderWidth: 1, borderRadius: 12 },
   charCount: { fontSize: 11, textAlign: "right" },
-  promoImagePicker: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 96, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 },
-  promoImage: { width: "100%", aspectRatio: 16 / 9, borderRadius: 12 },
+  promoImagePicker: { width: 84, height: 84, alignItems: "center", justifyContent: "center", gap: 2, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 },
+  promoImageThumb: { width: 84, height: 84, borderRadius: 12 },
   promoImageOverlay: { ...StyleSheet.absoluteFillObject, borderRadius: 12, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
-  promoImageRemove: { position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center" },
+  promoImageRemove: { position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center" },
 
   // Customer detail modal
   customerHero: { alignItems: "center", padding: 24, gap: 6, borderBottomWidth: 1 },
