@@ -1,14 +1,15 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform,
+  ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform,
   RefreshControl, ScrollView, StyleSheet, Text, TextInput,
   TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  customersApi, customerNotesApi,
+  customersApi, customerNotesApi, uploadsApi,
   type CustomerRecord, type NewsletterSubscriber, type CustomerNote,
 } from "@/lib/api";
 import { useColors } from "@/hooks/useColors";
@@ -57,6 +58,8 @@ export default function CustomersScreen() {
   const [composeVisible, setComposeVisible] = useState(false);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [imageUri, setImageUri] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [sending, setSending] = useState(false);
 
   // Bulk select — newsletter tab only
@@ -183,19 +186,50 @@ export default function CustomersScreen() {
   };
   const openComposeForOne = (id: string) => { setSendTargetIds([id]); setComposeVisible(true); };
 
+  const pickPromoImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    // Show immediately — no waiting
+    setImageUri(asset.uri);
+    if (asset.base64) {
+      setUploadingImage(true);
+      uploadsApi.uploadToCloudinary(asset.base64, asset.mimeType ?? "image/jpeg")
+        .then((cloudUrl) => setImageUri(cloudUrl))
+        .catch(() => Alert.alert("Upload failed", "Could not upload the image. Try again."))
+        .finally(() => setUploadingImage(false));
+    }
+  };
+
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
       Alert.alert("Missing fields", "Subject and message are both required.");
       return;
     }
+    if (uploadingImage) {
+      Alert.alert("Image still uploading", "Wait for the image to finish uploading before sending.");
+      return;
+    }
     setSending(true);
     try {
-      const res = await customersApi.sendNewsletter(subject.trim(), body.trim(), sendTargetIds ?? undefined) as any;
+      // A local file:// URI never made it to Cloudinary (e.g. offline mid-pick) —
+      // sending that as-is would embed a dead link in every subscriber's inbox.
+      const promoImageUrl = imageUri && !imageUri.startsWith("file://") ? imageUri : undefined;
+      const res = await customersApi.sendNewsletter(subject.trim(), body.trim(), sendTargetIds ?? undefined, promoImageUrl) as any;
       const sent = res?.sent ?? res?.data?.sent ?? 0;
       const total = res?.total ?? res?.data?.total ?? (sendTargetIds?.length ?? newsletter.length);
       setComposeVisible(false);
       setSubject("");
       setBody("");
+      setImageUri("");
       setSendTargetIds(null);
       setSelectMode(false);
       setSelectedIds(new Set());
@@ -475,6 +509,34 @@ export default function CustomersScreen() {
               />
               <Text style={[styles.charCount, { color: colors.mutedForeground }]}>{subject.length}/150</Text>
             </View>
+            <View style={styles.fieldBlock}>
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>Promo image (optional)</Text>
+              {imageUri ? (
+                <View style={{ position: "relative" }}>
+                  <Image source={{ uri: imageUri }} style={styles.promoImage} />
+                  {uploadingImage && (
+                    <View style={styles.promoImageOverlay}>
+                      <ActivityIndicator size="small" color="#fff" />
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => setImageUri("")}
+                    style={styles.promoImageRemove}
+                    hitSlop={8}
+                  >
+                    <Feather name="x" size={14} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={pickPromoImage}
+                  style={[styles.promoImagePicker, { borderColor: colors.border, backgroundColor: colors.card }]}
+                >
+                  <Feather name="image" size={18} color={colors.mutedForeground} />
+                  <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>Add an image</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <View style={[styles.fieldBlock, { flex: 1 }]}>
               <Text style={[styles.fieldLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>Message</Text>
               <TextInput
@@ -737,6 +799,10 @@ const styles = StyleSheet.create({
   subjectInput: { paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, borderWidth: 1, borderRadius: 12 },
   bodyInput: { flex: 1, minHeight: 160, paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, lineHeight: 23, borderWidth: 1, borderRadius: 12 },
   charCount: { fontSize: 11, textAlign: "right" },
+  promoImagePicker: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 96, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 },
+  promoImage: { width: "100%", aspectRatio: 16 / 9, borderRadius: 12 },
+  promoImageOverlay: { ...StyleSheet.absoluteFillObject, borderRadius: 12, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
+  promoImageRemove: { position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center" },
 
   // Customer detail modal
   customerHero: { alignItems: "center", padding: 24, gap: 6, borderBottomWidth: 1 },
